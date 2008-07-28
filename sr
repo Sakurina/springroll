@@ -32,7 +32,7 @@ else
 end
 $user = ENV['USER']
 $args = ARGV
-$ver = "r6-github"
+$ver = "r6"
 # Initialize constants
 SB = "/System/Library/CoreServices/SpringBoard.app"
 SR = "/var/root/SpringRoll"
@@ -50,7 +50,7 @@ Exceptions = {
 "NYTimes.app" => "NYTApplicationIcon.png",
 "aSubnet.app" => "logo.png",
 "Reviews.app" => "IGN_57x57.png",
-"Twitterrific.app" => "Icon.png",
+"Twitterrific.app" => [ "Icon.png", "Icon_free.png"],
 "VNC.app" => [ "vnciconLITE.png", "vncicon.png", "vnciconDEMO.png"],
 "SudokuFree.app" => "SudokuFreeIcon.png",
 "AOL Radio.app" => "radio.png",
@@ -304,7 +304,6 @@ def patch(iconfile,f)
 	files_done = nil
 	supp_passed = nil
 	rsrc_file = open("CodeResources","r+")
-	print "DONE \n"
 	rsrc_count = 1
 	# State of the process.
 	supp_passed = nil
