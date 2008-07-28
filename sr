@@ -380,6 +380,7 @@ def patch(iconfile,f)
 	supp_passed = nil
 	first_pass = nil
 	files_done = nil
+	# For each line in the CodeResources
 	rsrc_file.each { |line|
 		if first_pass == nil then
 			if files_done == true then
@@ -652,41 +653,59 @@ def theme
 	# APP STORE SUPPORT BEGINS HERE!
 	if ($ostype == "darwin9") and (Dir.entries("/var/root/SpringRoll/#{ARGV[1]}").include?('Icons')) then
 		puts "** Copying purchased app icons:"
-		Dir.chdir("/Applications")
+		# Change directory to /var/mobile/Applications
+		Dir.chdir("/var/mobile/Applications")
 		$apps = Dir.entries("/var/mobile/Applications")
+		# Remove the self-referential/back entries
 		$apps.delete "."
 		$apps.delete ".."
+		# While there are still apps to process:
 		while $apps.nitems > 0:
-			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
-			Dir.entries(Dir.pwd).each do |f|
-				if f.include? ".app" then
-					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
-					basename = f.gsub('.app','.png')
-					if Dir.entries("/var/root/SpringRoll/Default/Icons").include?(basename) then
-						if $special.include?(f) then
-							t_specialcases(f,basename)
-						else
-							if Dir.entries(Dir.pwd).include?("icon.png") then
-								print "*** #{f} - icon.png ... "
-								shaverify("icon.png",f,basename)
-								print "DONE \n"
+			# And if the app is really an app (directory)
+			if File.directory?($apps[0]) then
+				# Change to its directory
+				Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
+				# For each file...
+				Dir.entries(Dir.pwd).each do |f|
+					# If one is an app...
+					if f.include? ".app" then
+						# Enter it.
+						Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
+						# Set a basename.
+						basename = f.gsub('.app','.png')
+						# If the theme has an icon for this app then:
+						if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?(basename) then
+							# If it's an exception, run t_specialcases
+							if $special.include?(f) then
+								t_specialcases(f,basename)
+							else
+								# If it's normal, process its icon.png or Icon.png
+								if Dir.entries(Dir.pwd).include?("icon.png") then
+									print "*** #{f} - icon.png ... "
+									shaverify("icon.png",f,basename)
+									print "DONE \n"
+								end
+								if Dir.entries(Dir.pwd).include?("Icon.png") then
+									print "*** #{f} - Icon.png ... "
+									shaverify("Icon.png",f,basename)		
+									print "DONE \n"
+								end
 							end
-							if Dir.entries(Dir.pwd).include?("Icon.png") then
-								print "*** #{f} - Icon.png ... "
-								shaverify("Icon.png",f,basename)		
-								print "DONE \n"
-							end
+							# Change its gloss setting only if the app has an icon
+							`plutil -c xml1 Info.plist`
+							`plutil -1 UIPrerenderedIcon Info.plist`
+							`plutil -c binary1 Info.plist`
 						end
-						`plutil -c xml1 Info.plist`
-						`plutil -1 UIPrerenderedIcon Info.plist`
-						`plutil -c binary1 Info.plist`
 					end
 				end
+				# Move onto the next entry
+				$apps.shift
+			else
+				# If it isn't an app... then go to the next entry
+				$apps.shift
 			end
-			$apps.shift
 		end
 	end
-	# END APP STORE SUPPORT YEAH!
 	`killall SpringBoard`
 	puts "* Theming complete."
 	puts "  To restore: use 'sr restore'"
@@ -768,7 +787,7 @@ end
 
 def restcp(base, full)
 	print "*** #{base} ... "
-	`cp "/var/root/SpringRoll/Default/#{base}" "#{full}"`
+	cp("/var/root/SpringRoll/Default/#{base}","#{full}")
 	print "DONE \n"
 end
 
@@ -789,6 +808,8 @@ end
 
 
 def restore
+	# Set SpringBoard prefix.
+	sb_prefix = "/System/Library/CoreServices/SpringBoard.app"
 	puts "* Restoring backup."
 	puts "** Restoring original Dock resources:"
 	restcp('SBDockBG.png','/System/Library/CoreServices/SpringBoard.app/SBDockBG.png')
@@ -796,6 +817,7 @@ def restore
 	puts "** Restoring original Badge resources:"
 	restcp('SBBadgeBG.png','/System/Library/CoreServices/SpringBoard.app/SBBadgeBG.png')
 	# SLIDERS
+	# Set correct prefix according to OS version
 	case $ostype
 		when "darwin8": slider_prefix = "/System/Library/Frameworks/TelephonyUI.framework"
 		when "darwin9": slider_prefix = "/System/Library/PrivateFrameworks/TelephonyUI.framework"
@@ -811,14 +833,21 @@ def restore
 	slider_rsrc.each do |src,dest|
 		restcp(src,dest)
 	end
+	# BATTERY
 	puts "** Restoring original Battery resources:"
 	(1..17).each do |i|
-		restcp("BatteryBG_#{i}.png","/System/Library/CoreServices/SpringBoard.app/BatteryBG_#{i}.png")
+		restcp("BatteryBG_#{i}.png","#{sb_prefix}/BatteryBG_#{i}.png")
 	end
+	# STATUS BAR
 	puts "** Restoring original StatusBar resources:"
-	restcp('Default_BG.png','/System/Library/CoreServices/SpringBoard.app/Default_BG.png')
-	restcp('FSO_BG.png','/System/Library/CoreServices/SpringBoard.app/FSO_BG.png')
-	restcp('FST_BG.png','/System/Library/CoreServices/SpringBoard.app/FST_BG.png')
+	statusbar_rsrc = {
+		"Default_BG.png" => "#{sb_prefix}/Default_BG.png",
+		"FSO_BG.png" => "#{sb_prefix}/FSO_BG.png",
+		"FST_BG.png" => "#{sb_prefix}/FST_BG.png" }
+	statusbar_rsrc.each do |src,dest|
+		restcp(src,dest)
+	end
+	# NORMAL APP ICONS
 	puts '** Restoring application icons:'
 	Dir.chdir('/Applications')
 	$apps = Dir.entries('/Applications')
