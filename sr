@@ -70,15 +70,6 @@ exceptions = {
 "eReader.app" => "app-icon.png",
 "SQLiteBooks.app" => "ToDo_57.png" }
 
-exceptions.sort.each do |app, icon|
-
-  if icon.is_a?String
-    puts "#{app}: #{icon}"
-  elsif icon.is_a?Array
-    puts "#{app}: #{icon.join(' ')}"
-  end
-end
-
 # TO BE REPLACED BY VASTLY SUPERIOR EXCEPTIONS HASH TABLE:
 # Array of AppStore applications that have special icon names.
 $special = ["CurrencyConverterApp.app", "SimpleFlashLight.app", "Exposure.app", "NYTimes.app", "aSubnet.app", "Reviews.app", "Twitterrific.app", "VNC.app", "SudokuFree.app", "AOL Radio.app", "Flashlight.app", "MySpace.app", "WeatherBug.app", "YelpIPhone_take5.app", "imaze.app", "iMmo.app", "Bubbles.app", "WritingPad.app", "Jott.app", "iYardage.app", "korebasi lite.app", "YPmobile.app", "Mobile News.app", "Rhythm.app", "WordPress.app", "RubyRepeat.app","Tanjas SOS.app","Save Benjis.app","Barcode.app","Stanza.app","Eventful.app","eReader.app","SQLiteBooks.app"]
@@ -919,37 +910,54 @@ def restore
 	puts "  Device will respring shortly."
 end
 
+# SummerBoard Support
 def smbmv(old,new)
 	if Dir.entries(Dir.pwd).include?(old) then
 		print "** #{old} -> #{new} ... "
-		`mv "#{Dir.pwd}/#{old}" "#{Dir.pwd}/#{new}"`
+		File.rename(old,new)
 		print "DONE \n"
-	else
-		puts "** #{old} ... NOT FOUND"
 	end
 end
 
 def smbconv
-	Dir.chdir("/var/root/SpringRoll/#{ARGV[1]}")
-	puts "* Renaming status bar."
-	smbmv("StatusBar.png","StatusBar-FSO.png")
-	puts "* Converting SMB Icons directory to SpringRoll format."
-	Dir.chdir("/var/root/SpringRoll/#{ARGV[1]}/Icons")
-	smbmv("Calendar.png","MobileCal.png")
-	smbmv("Camera.png","MobileSlideShow-Camera.png")
-	smbmv("Clock.png","MobileTimer.png")
-	smbmv("Contacts.png","MobileAddressBook.png")
-	smbmv("Mail.png","MobileMail.png")
-	smbmv("Music.png","MobileMusicPlayer-AudioPlayer.png")
-	smbmv("Notes.png","MobileNotes.png")
-	smbmv("Phone.png","MobilePhone.png")
-	smbmv("Photos.png","MobileSlideShow-Photos.png")
-	smbmv("Safari.png","MobileSafari.png")
-	smbmv("Settings.png","Preferences.png")
-	smbmv("Text.png","MobileSMS.png")
-	smbmv("Videos.png","MobileMusicPlayer-VideoPlayer.png")
-	smbmv("iPod.png","MobileMusicPlayer-MediaPlayer.png")
-	smbmv("iTunes.png","MobileStore.png")
+	# Verify to see if the theme even exists!
+	if Dir.entries("/var/root/SpringRoll/").include?(ARGV[1]) then
+		Dir.chdir("/var/root/SpringRoll/#{ARGV[1]}")
+		puts "* Renaming status bar:"
+		smbmv("StatusBar.png","StatusBar-FSO.png")
+		puts "* Renaming icons:"
+		# Don't break if the user's theme doesn't have
+		# an icons folder!
+		if Dir.entries(Dir.pwd).include?("Icons") then
+			Dir.chdir("/var/root/SpringRoll/#{ARGV[1]}/Icons")
+			smbrenames = {
+				"Calendar.png" => "MobileCal.png",
+				"Camera.png" => "MobileSlideShow-Camera.png",
+				"Clock.png" => "MobileTimer.png",
+				"Contacts.png" => "MobileAddressBook.png",
+				"Mail.png" => "MobileMail.png",
+				"Music.png" => "MobileMusicPlayer-AudioPlayer.png",
+				"Notes.png" => "MobileNotes.png",
+				"Phone.png" => "MobilePhone.png",
+				"Photos.png" => "MobileSlideShow-Photos.png",
+				"Safari.png" => "MobileSafari.png",
+				"Settings.png" => "Preferences.png",
+				"Text.png" => "MobileSMS.png",
+				"Videos.png" => "MobileMusicPlayer-VideoPlayer.png",
+				"iPod.png" => "MobileMusicPlayer-MediaPlayer.png",
+				"iTunes.png" => "MobileStore.png" }
+			smbrenames.each do |old, new|
+				smbmv(old,new)
+			end
+		else
+			puts "* WARNING! No icon directory found!"
+		end
+		puts "* Conversion complete!"
+		puts "  Use 'sr theme #{ARGV[1]}' to"
+		puts "  apply this theme."
+	else
+		raise StandardError, "The theme you've specified doesn't exist."
+	end
 end
 
 def manualprep
@@ -989,7 +997,7 @@ end
 def proceed(action)
 	# Verify to see if user is root.
 	if $user != 'root' then
-		raise StandardError, "You must run this as root! You cannot use su or sudo."
+		raise StandardError, "You must run this as root!"
 	end
 	# Dispatch orders.
 	case action
