@@ -459,11 +459,14 @@ def theme
 	# DOCK
 	puts "** Copying dock resources:"
 	dock_rsrc = {
-		"Dock.png" => "#{SB}/SBDockBG.png",
-		"Dock.png" => "#{SB}/SBDockBG2.png"
+		"Dock.png" => [ "#{SB}/SBDockBG.png", "#{SB}/SBDockBG2.png" ]
 	}
 	dock_rsrc.each do |src,dest|
-		thcp(src,dest)
+		if dest.is_a?Array
+			dest.each do |realdest|
+				thcp(src,realdest)
+			end
+		end
 	end
 	# BADGE
 	puts "** Copying badge resources:"
