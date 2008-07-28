@@ -21,6 +21,7 @@
 #   shows this help message
 
 require 'rdoc/usage'
+require 'fileutils'
 
 $ver = "r6"
 # Determine whether or not the device is running 2.0 (darwin9)
@@ -83,7 +84,7 @@ end
 
 def bakcp(full,base)
 	print "*** #{base} ... "
-	`cp "#{full}" "/var/root/SpringRoll/Default/#{base}"`
+	FileUtils::cp(full,"/var/root/SpringRoll/Default/#{base}")
 	print "DONE \n"
 end
 
@@ -96,7 +97,7 @@ def backup_special(f,basename,app,filename)
 	if @f == @app then
 		if Dir.entries(Dir.pwd).include?(@filename) then
 			print "*** #{@f} - #{@filename} ... "
-			`cp "/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}" "/var/root/SpringRoll/Default/Icons/#{@basename}"`
+			FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}","/var/root/SpringRoll/Default/Icons/#{@basename}")
 			print "DONE \n"
 		end
 	end
@@ -307,8 +308,10 @@ def backup
 					print "*** #{$apps[0]} - icon.png ... "
 					basename = $apps[0].gsub('.app','.png')
 					case Dir.entries(Dir.pwd).include?('icon.png')
-						when true: `cp "/Applications/#{$apps[0]}/icon.png" "/var/root/SpringRoll/Default/Icons/#{basename}"` and print "DONE \n"
-						when false: print "NOT FOUND! \n"
+						when true
+							FileUtils::cp("/Applications/#{$apps[0]}/icon.png","/var/root/SpringRoll/Default/Icons/#{basename}")
+							puts "DONE"
+						when false: puts "NOT FOUND!"
 					end
 				end
 				case $apps[0]
@@ -342,20 +345,20 @@ def backup
 						else
 							if Dir.entries(Dir.pwd).include?("icon.png") then
 								print "*** #{f} - icon.png ... "
-								`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png" "/var/root/SpringRoll/Default/Icons/#{basename}"`
+								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png","/var/root/SpringRoll/Default/Icons/#{basename}")
 								print "DONE \n"
 							end
 							if Dir.entries(Dir.pwd).include?("Icon.png") then
 								print "*** #{f} - Icon.png ... "
-								`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png" "/var/root/SpringRoll/Default/Icons/#{basename}"`
+								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png","/var/root/SpringRoll/Default/Icons/#{basename}")
 								print "DONE \n"
 							end
 						end
 						if Dir.entries("/var/root/SpringRoll").include?("AppStoreSupport") then
-							`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist" "/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist"`
+							FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist","/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist")
 						else
 							Dir.mkdir("/var/root/SpringRoll/AppStoreSupport")
-							`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist" "/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist"`
+							FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist","/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist")
 						end
 					end
 				end
@@ -485,7 +488,7 @@ end
 def thcp(base, full)
 	if Dir.entries(Dir.pwd).include?(base) then
 		print "*** #{base} ... "
-		`cp "#{Dir.pwd}/#{base}" "#{full}"`
+		FileUtils::cp("#{Dir.pwd}/#{base}","#{full}")
 		print "DONE \n"
 	else
 		puts "*** #{base} ... NOT FOUND"
@@ -532,9 +535,9 @@ def theme
 	puts "** Copying dock resources:"
 	if Dir.entries(Dir.pwd).include?("Dock.png") then
 		print "*** Dock.png ... "
-		`cp "#{Dir.pwd}/Dock.png" "/System/Library/CoreServices/SpringBoard.app/SBDockBG.png"`
+		FileUtils::cp("#{Dir.pwd}/Dock.png","/System/Library/CoreServices/SpringBoard.app/SBDockBG.png")
 		print "[1] "
-		`cp "#{Dir.pwd}/Dock.png" "/System/Library/CoreServices/SpringBoard.app/SBDockBG2.png"`
+		FileUtils::cp("#{Dir.pwd}/Dock.png","/System/Library/CoreServices/SpringBoard.app/SBDockBG2.png")
 		print "[2] DONE \n"
 	else
 		puts "*** Dock.png ... NOT FOUND"
@@ -591,21 +594,21 @@ def theme
 			def tmobilemusicplayer
  	                	if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-AudioPlayer.png') then
 					print "*** MobileMusicPlayer-AudioPlayer.png ... "
-					`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-AudioPlayer.png" "/Applications/MobileMusicPlayer.app/icon-AudioPlayer.png"`
+					FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-AudioPlayer.png","/Applications/MobileMusicPlayer.app/icon-AudioPlayer.png")
 					print "DONE \n"
   	                      	else
  	                               	puts "*** MobileMusicPlayer-AudioPlayer.png ... "
                        		end
 				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-MediaPlayer.png') then
 					print "*** MobileMusicPlayer-MediaPlayer.png ... "
-                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-MediaPlayer.png" "/Applications/MobileMusicPlayer.app/icon-MediaPlayer.png"`
+                                	FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-MediaPlayer.png","/Applications/MobileMusicPlayer.app/icon-MediaPlayer.png")
                                 	print "DONE \n"
                         	else
                                 	puts "*** MobileMusicPlayer-MediaPlayer.png ... NOT FOUND"
                         	end
 				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-VideoPlayer.png') then
 					print "*** MobileMusicPlayer-VideoPlayer.png ... "
-                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-VideoPlayer.png" "/Applications/MobileMusicPlayer.app/icon-VideoPlayer.png"`
+                                	FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-VideoPlayer.png","/Applications/MobileMusicPlayer.app/icon-VideoPlayer.png")
                                 	print "DONE \n"
                         	else
                                 	puts "*** MobileMusicPlayer-VideoPlayer.png ... NOT FOUND!"
@@ -614,14 +617,14 @@ def theme
                 	def tmobileslideshow
 				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileSlideShow-Camera.png') then
 					print "*** MobileSlideShow-Camera.png ... "
-                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileSlideShow-Camera.png" "/Applications/MobileSlideShow.app/icon-Camera.png"`
+                                	FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileSlideShow-Camera.png","/Applications/MobileSlideShow.app/icon-Camera.png")
                                 	print "DONE \n"
                         	else
                                 	puts "*** MobileSlideShow-Camera.png ... NOT FOUND"
                         	end
 				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileSlideShow-Photos.png') then
 					print "*** MobileSlideShow-Photos.png ... "
-                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileSlideShow-Photos.png" "/Applications/MobileSlideShow.app/icon-Photos.png"`
+                                	FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileSlideShow-Photos.png","/Applications/MobileSlideShow.app/icon-Photos.png")
                                 	print "DONE \n"
                         	else
                                 	puts "*** MobileSlideShow-Photos.png ... NOT FOUND"
@@ -631,10 +634,10 @@ def theme
                         	print "*** #{$apps[0]} - icon.png ... "
                         	basename = $apps[0].gsub('.app','.png')
                         	if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?(basename) then
-                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}" "/Applications/#{$apps[0]}/icon.png"`
-                                	print "DONE \n"
+                                	FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
+                                	puts "DONE"
                         	else
-                                	print "NOT FOUND! \n"
+                                	puts "NOT FOUND!"
                         	end
                 	end
                 	case $apps[0]
@@ -662,7 +665,7 @@ def theme
 		# While there are still apps to process:
 		while $apps.nitems > 0:
 			# And if the app is really an app (directory)
-			if File.directory?($apps[0]) then
+			if File.directory?("/var/mobile/Applications/#{$apps[0]}") then
 				# Change to its directory
 				Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
 				# For each file...
@@ -760,7 +763,7 @@ def shaverify(iconname,f,basename)
 			# If they match:
 			if (@rsrc_real_sha == @rsrc_saved_sha) and (@rule_real_sha == @rule_saved_sha) then
 				# Simply copy the icon over, no questions asked.
-				`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}"`
+				FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
 			else
 				# And if they don't, refuse to do anything with that app and give a warning.
 				puts "\n*** REGARDING #{f}:"
@@ -776,8 +779,7 @@ def shaverify(iconname,f,basename)
 		else
 			# If the files don't exist, then the application is not patched!
 			patch(iconname,f)
-			print "PATCHED ... "
-			`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}"`
+			FileUtils::cp("/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
 		end
 	end
 
@@ -787,7 +789,7 @@ end
 
 def restcp(base, full)
 	print "*** #{base} ... "
-	cp("/var/root/SpringRoll/Default/#{base}","#{full}")
+	FileUtils::cp("/var/root/SpringRoll/Default/#{base}","#{full}")
 	print "DONE \n"
 end
 
@@ -799,7 +801,7 @@ def restore_special(f,basename,app,filename)
 	if @f == @app then
 		if Dir.entries("/var/root/SpringRoll/Default/Icons").include?(@basename) then
 			print "*** #{@f} - #{@filename} ... "
-			`cp "/var/root/SpringRoll/Default/Icons/#{@basename}" "/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}"`
+			FileUtils::cp("/var/root/SpringRoll/Default/Icons/#{@basename}","/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}")
 			print "DONE \n"
 		end
 	end
@@ -857,19 +859,27 @@ def restore
 		if File.directory?("/Applications/#{$apps[0]}") then
 			Dir.chdir("/Applications/#{$apps[0]}")
 			def rmobilemusicplayer
-				restcp('Icons/MobileMusicPlayer-AudioPlayer.png', "#{Dir.pwd}/icon-AudioPlayer.png")
-				restcp('Icons/MobileMusicPlayer-MediaPlayer.png', "#{Dir.pwd}/icon-MediaPlayer.png")
-				restcp('Icons/MobileMusicPlayer-VideoPlayer.png', "#{Dir.pwd}/icon-VideoPlayer.png")
+				mmp_rsrc = {
+					"Icons/MobileMusicPlayer-AudioPlayer.png" => "#{Dir.pwd}/icon-AudioPlayer.png",
+					"Icons/MobileMusicPlayer-MediaPlayer.png" => "#{Dir.pwd}/icon-MediaPlayer.png",
+					"Icons/MobileMusicPlayer-VideoPlayer.png" => "#{Dir.pwd}/icon-VideoPlayer.png" }
+				mmp_rsrc.each do |src,dest|
+					restcp(src,dest)
+				end
 			end
 			def rmobileslideshow
-				restcp('Icons/MobileSlideShow-Camera.png', "#{Dir.pwd}/icon-Camera.png")
-				restcp('Icons/MobileSlideShow-Photos.png', "#{Dir.pwd}/icon-Photos.png")
+				mss_rsrc = {
+					"Icons/MobileSlideShow-Camera.png", "#{Dir.pwd}/icon-Camera.png",
+					"Icons/MobileSlideShow-Photos.png", "#{Dir.pwd}/icon-Photos.png" }
+				mss_rsrc.each do |src,dest|
+					restcp(src,dest)
+				end
 			end
 			def rnormalicon
 				print "*** #{$apps[0]} - icon.png ... "
 				basename = $apps[0].gsub('.app','.png')
 				if Dir.entries('/var/root/SpringRoll/Default/Icons').include?(basename) then
-					`cp "/var/root/SpringRoll/Default/Icons/#{basename}" "/Applications/#{$apps[0]}/icon.png"`
+					FileUtils::cp("/var/root/SpringRoll/Default/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
 					print "DONE \n"
 				else
 					print "NOT FOUND! \n"
@@ -905,18 +915,18 @@ def restore
 						else
 							if Dir.entries(Dir.pwd).include?("icon.png") then
 								print "*** #{f} - icon.png ... "
-								`cp "/var/root/SpringRoll/Default/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png"`
+								FileUtils::cp("/var/root/SpringRoll/Default/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png")
 								print "DONE \n"
 							end
 							if Dir.entries(Dir.pwd).include?("Icon.png") then
 								print "*** #{f} - Icon.png ... "
-								`cp "/var/root/SpringRoll/Default/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png"`
+								FileUtils::cp("/var/root/SpringRoll/Default/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png")
 								print "DONE \n"
 							end
 						end
 						if Dir.entries("/var/root/SpringRoll").include?("AppStoreSupport") then			
 							if Dir.entries("/var/root/SpringRoll/AppStoreSupport").include?("#{f}-Info.plist") then
-								`cp "/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist" "/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist"`
+								FileUtils::cp("/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist","/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist")
 							end
 						else
 							Dir.mkdir("/var/root/SpringRoll/AppStoreSupport")
