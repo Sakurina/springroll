@@ -43,7 +43,7 @@ case $ostype
 end
 
 # Exceptions hash table courtesy of fujin
-exceptions = {
+Exceptions = {
 "CurrencyConverterApp.app" => "CurrencyAppIcon.png",
 "SimpleFlashLight.app" => "flashlighticon.png",
 "Exposure.app" => "Exposure.png",
@@ -96,59 +96,6 @@ def bakcp(full,base)
 end
 
 # NEW FROM SRA
-def backup_special(f,basename,app,filename)
-	@f = f
-	@basename = basename
-	@app = app
-	@filename = filename
-	if @f == @app then
-		if Dir.entries(Dir.pwd).include?(@filename) then
-			print "*** #{@f} - #{@filename} ... "
-			FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}","#{SR}/Default/Icons/#{@basename}")
-			print "DONE \n"
-		end
-	end
-end
-
-def b_specialcases(f,basename)
-	backup_special(f,basename,"CurrencyConverterApp.app","CurrencyAppIcon.png")
-	backup_special(f,basename,"SimpleFlashLight.app","flashlighticon.png")
-	backup_special(f,basename,"Exposure.app","Exposure.png")
-	backup_special(f,basename,"NYTimes.app","NYTApplicationIcon.png")
-	backup_special(f,basename,"aSubnet.app","logo.png")
-	backup_special(f,basename,"Reviews.app","IGN_57x57.png")
-	backup_special(f,basename,"Twitterrific.app","Icon.png")
-	backup_special(f,basename,"Twitterrific.app","Icon_free.png")
-	backup_special(f,basename,"VNC.app","vnciconLITE.png")
-	backup_special(f,basename,"VNC.app","vncicon.png")
-	backup_special(f,basename,"VNC.app","vnciconDEMO.png")
-	backup_special(f,basename,"SudokuFree.app","SudokuFreeIcon.png")
-	backup_special(f,basename,"AOL Radio.app","radio.png")
-	backup_special(f,basename,"Flashlight.app","appicon.png")
-	backup_special(f,basename,"MySpace.app","applicationIcon_prerendered.png")
-	backup_special(f,basename,"WeatherBug.app","apple-touch-icon.png")
-	backup_special(f,basename,"YelpIPhone_take5.app","yelpicon.png")
-	backup_special(f,basename,"imaze.app","maze.png")
-	backup_special(f,basename,"iMmo.app","Icon2.png")
-	backup_special(f,basename,"Bubbles.app","BubblesIcon.png")
-	backup_special(f,basename,"WritingPad.app","WritingPadlogo57X57.png")
-	backup_special(f,basename,"Jott.app","jotttouch_icon.png")
-	backup_special(f,basename,"iYardage.app","iyardage_icon_57x57_dc.png")
-	backup_special(f,basename,"korebasi lite.app","korebasi_icon.png")
-	backup_special(f,basename,"YPmobile.app","rubicon.png")
-	backup_special(f,basename,"Mobile News.app","apple-touch-icon.png")
-	backup_special(f,basename,"Rhythm.app","vSnax_Logo.png")
-	backup_special(f,basename,"WordPress.app","application-icon.png")
-	backup_special(f,basename,"RubyRepeat.app","rubyrepeat_icon.png")
-	backup_special(f,basename,"Tanjas SOS.app","AppIcon.png")
-	backup_special(f,basename,"Save Benjis.app","benji_face.png")
-	backup_special(f,basename,"Barcode.app","Barcode.png")
-	backup_special(f,basename,"Stanza.app","Icon57x57.png")
-	backup_special(f,basename,"Eventful.app","eventful-icon.png")
-	backup_special(f,basename,"eReader.app","app-icon.png")
-	backup_special(f,basename,"SQLiteBooks.app","ToDo_57.png")
-end
-
 def t_specialcases(f,basename)
 	theme_special(f,basename,"CurrencyConverterApp.app","CurrencyAppIcon.png")
 	theme_special(f,basename,"SimpleFlashLight.app","flashlighticon.png")
@@ -344,17 +291,27 @@ def backup
 					if f.include? ".app" then
 						Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
 						basename = f.gsub('.app','.png')
-						# GENERAL CASES (icon.png and Icon.png)
-						if $special.include?(f) then
-							# SPECIAL CASES
-							b_specialcases(f,basename)
+						if Exceptions.has_key?(f) then
+							icon = Exceptions.fetch(f)
+							if icon.is_a?String
+								# Process it once!
+								print "*** #{f} - #{icon} ... "
+								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{icon}", "#{SR}/Default/Icons/#{basename}")
+								puts "DONE"
+							elsif icon.is_a?Array
+								# Process each element!
+								icon.each do |file|
+									print "*** #{f} - #{file} ... "
+									FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{file}", "#{SR}/Default/Icons/#{basename}")
+									puts "DONE"
+								end
+							end
 						else
 							if Dir.entries(Dir.pwd).include?("icon.png") then
 								print "*** #{f} - icon.png ... "
 								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png","#{SR}/Default/Icons/#{basename}")
 								print "DONE \n"
-							end
-							if Dir.entries(Dir.pwd).include?("Icon.png") then
+							elsif Dir.entries(Dir.pwd).include?("Icon.png") then
 								print "*** #{f} - Icon.png ... "
 								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png","#{SR}/Default/Icons/#{basename}")
 								print "DONE \n"
