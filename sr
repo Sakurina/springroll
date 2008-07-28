@@ -135,45 +135,6 @@ def t_specialcases(f,basename)
 	theme_special(f,basename,"SQLiteBooks.app","ToDo_57.png")
 end
 
-def r_specialcases(f,basename)
-	restore_special(f,basename,"CurrencyConverterApp.app","CurrencyAppIcon.png")
-	restore_special(f,basename,"SimpleFlashLight.app","flashlighticon.png")
-	restore_special(f,basename,"Exposure.app","Exposure.png")
-	restore_special(f,basename,"NYTimes.app","NYTApplicationIcon.png")
-	restore_special(f,basename,"aSubnet.app","logo.png")
-	restore_special(f,basename,"Reviews.app","IGN_57x57.png")
-	restore_special(f,basename,"Twitterrific.app","Icon.png")
-	restore_special(f,basename,"Twitterrific.app","Icon_free.png")
-	restore_special(f,basename,"VNC.app","vnciconLITE.png")
-	restore_special(f,basename,"VNC.app","vncicon.png")
-	restore_special(f,basename,"VNC.app","vnciconDEMO.png")
-	restore_special(f,basename,"SudokuFree.app","SudokuFreeIcon.png")
-	restore_special(f,basename,"AOL Radio.app","radio.png")
-	restore_special(f,basename,"Flashlight.app","appicon.png")
-	restore_special(f,basename,"MySpace.app","applicationIcon_prerendered.png")
-	restore_special(f,basename,"WeatherBug.app","apple-touch-icon.png")
-	restore_special(f,basename,"YelpIPhone_take5.app","yelpicon.png")
-	restore_special(f,basename,"imaze.app","maze.png")
-	restore_special(f,basename,"iMmo.app","Icon2.png")
-	restore_special(f,basename,"Bubbles.app","BubblesIcon.png")
-	restore_special(f,basename,"WritingPad.app","WritingPadlogo57X57.png")
-	restore_special(f,basename,"Jott.app","jotttouch_icon.png")
-	restore_special(f,basename,"iYardage.app","iyardage_icon_57x57_dc.png")
-	restore_special(f,basename,"korebasi lite.app","korebasi_icon.png")
-	restore_special(f,basename,"YPmobile.app","rubicon.png")
-	restore_special(f,basename,"Mobile News.app","apple-touch-icon.png")
-	restore_special(f,basename,"Rhythm.app","vSnax_Logo.png")
-	restore_special(f,basename,"WordPress.app","application-icon.png")
-	restore_special(f,basename,"RubyRepeat.app","rubyrepeat_icon.png")
-	restore_special(f,basename,"Tanjas SOS.app","AppIcon.png")
-	restore_special(f,basename,"Save Benjis.app","benji_face.png")
-	restore_special(f,basename,"Barcode.app","Barcode.png")
-	restore_special(f,basename,"Stanza.app","Icon57x57.png")
-	restore_special(f,basename,"Eventful.app","eventful-icon.png")
-	restore_special(f,basename,"eReader.app","app-icon.png")
-	restore_special(f,basename,"SQLiteBooks.app","ToDo_57.png")
-end
-
 # END NEW FROM SRA
 
 def backup
@@ -750,22 +711,6 @@ def restcp(base, full)
 	print "DONE \n"
 end
 
-def restore_special(f,basename,app,filename)
-	@f = f
-	@basename = basename
-	@app = app
-	@filename = filename
-	if @f == @app then
-		if Dir.entries("#{SR}/Default/Icons").include?(@basename) then
-			print "*** #{@f} - #{@filename} ... "
-			FileUtils::cp("#{SR}/Default/Icons/#{@basename}","/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}")
-			print "DONE \n"
-		end
-	end
-end
-
-
-
 def restore
 	# Set SpringBoard prefix.
 	puts "* Restoring backup."
@@ -831,9 +776,9 @@ def restore
 				basename = $apps[0].gsub('.app','.png')
 				if Dir.entries("#{SR}/Default/Icons").include?(basename) then
 					FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
-					print "DONE \n"
+					puts "DONE"
 				else
-					print "NOT FOUND! \n"
+					puts "NOT FOUND!"
 				end
 			end
 			case $apps[0]
@@ -860,31 +805,32 @@ def restore
 					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
 					basename = f.gsub('.app', '.png')
 					if Dir.entries("#{SR}/Default/Icons").include?(basename) then
-						# Detect special cases
-						if $special.include?(f) then
-							r_specialcases(f,basename)
+						if Exceptions.has_key?(f)
+							icon = Exceptions.fetch(f)
+							if icon.is_a?String
+								# Process once
+								print "*** #{f} - #{icon} ... "
+								FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/#{icon}")
+								puts "DONE"
+							elsif icon.is_a?Array
+								# Process each element individually
+								icon.each do |file|
+									print "*** #{f} - #{file} ... "
+									FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/#{file}")
+									puts "DONE"
+								end
+							end
 						else
-							if Dir.entries(Dir.pwd).include?("icon.png") then
+							if Dir.entries(Dir.pwd).include?("icon.png")
 								print "*** #{f} - icon.png ... "
-								FileUtils::cp("#{SR}/Default/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png")
-								print "DONE \n"
-							end
-							if Dir.entries(Dir.pwd).include?("Icon.png") then
+								FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png")
+								puts "DONE"
+							elsif Dir.entries(Dir.pwd).include?("Icon.png")
 								print "*** #{f} - Icon.png ... "
-								FileUtils::cp("#{SR}/Default/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png")
-								print "DONE \n"
+								FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png")
+								puts "DONE"
 							end
 						end
-						if Dir.entries(SR).include?("AppStoreSupport") then			
-							if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-Info.plist") then
-								FileUtils::cp("#{SR}/AppStoreSupport/#{f}-Info.plist","/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist")
-							end
-						else
-							Dir.mkdir("#{SR}/AppStoreSupport")
-						end
-	
-					else
-						puts "** #{$apps[0]} - #{f} ... NOT FOUND"
 					end
 				end
 			end
