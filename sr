@@ -238,8 +238,7 @@ def backup
 				$apps.shift
 			end
 		end
-		# APP STORE SUPPORT BEGINS HERE
-		# ANYTHING FOLLOWING THIS COULD TERRIBLY BREAK D:
+		# APP STORE APPLICATION ICONS
 		if ($ostype == "darwin9") then
 			puts "** Backing up purchased app icons:"
 			Dir.chdir('/var/mobile/Applications')
@@ -256,15 +255,19 @@ def backup
 							icon = Exceptions.fetch(f)
 							if icon.is_a?String
 								# Process it once!
-								print "*** #{f} - #{icon} ... "
-								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{icon}", "#{SR}/Default/Icons/#{basename}")
-								puts "DONE"
+								if Dir.entries(Dir.pwd).include?(icon) then
+									print "*** #{f} - #{icon} ... "
+									FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{icon}", "#{SR}/Default/Icons/#{basename}")
+									puts "DONE"
+								end
 							elsif icon.is_a?Array
 								# Process each element!
 								icon.each do |file|
-									print "*** #{f} - #{file} ... "
-									FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{file}", "#{SR}/Default/Icons/#{basename}")
-									puts "DONE"
+									if Dir.entries(Dir.pwd).include?(file) then
+										print "*** #{f} - #{file} ... "
+										FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{file}", "#{SR}/Default/Icons/#{basename}")
+										puts "DONE"
+									end
 								end
 							end
 						else
@@ -714,9 +717,11 @@ end
 def restore
 	# Set SpringBoard prefix.
 	puts "* Restoring backup."
+	# DOCK
 	puts "** Restoring original Dock resources:"
 	restcp("SBDockBG.png","#{SB}/SBDockBG.png")
 	restcp("SBDockBG2.png","#{SB}/SBDockBG2.png")
+	# BADGE
 	puts "** Restoring original Badge resources:"
 	restcp("SBBadgeBG.png","#{SB}/SBBadgeBG.png")
 	# SLIDERS
@@ -791,7 +796,7 @@ def restore
 			$apps.shift
 		end
 	end
-	# APPSTORE SUPPORT OMGOMGOMGOMG
+	# APP STORE APPLICATION ICONS
 	if ($ostype == "darwin9") then
 		puts "** Restoring purchased app icons:"
 		Dir.chdir("/var/mobile/Applications")
@@ -832,18 +837,21 @@ def restore
 							end
 						end
 					end
+					if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-Info.plist")
+						FileUtils::cp("#{SR}/AppStoreSupport/#{f}-Info.plist","/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist")
+					end
 				end
 			end
 			$apps.shift
 		end
 	end
-	# APPSTORE SUPPORT OMGOMGOMGOMG
+	# END OF RESTORE
 	`killall SpringBoard`
 	puts "* Interface restored."
 	puts "  Device will respring shortly."
 end
 
-# SummerBoard Support
+# SUMMERBOARD SUPPORT
 def smbmv(old,new)
 	if Dir.entries(Dir.pwd).include?(old) then
 		print "** #{old} -> #{new} ... "
@@ -893,6 +901,7 @@ def smbconv
 	end
 end
 
+# MANUAL PREPARATION
 def manualprep
 		Dir.chdir("/var/mobile/Applications")
 		$apps = Dir.entries("/var/mobile/Applications")
@@ -927,6 +936,8 @@ def manualprep
 		end
 end
 
+# ARGUMENT PROCESSING
+# To be phased out with GetoptLong in the future.
 def proceed(action)
 	# Verify to see if user is root.
 	if $user != 'root' then
@@ -942,7 +953,6 @@ def proceed(action)
 	end
 end
 
-# ACTUAL RUNNING CODE:
 case ARGV[0]
 	when nil: RDoc::usage
 	when 'r': proceed(restore)
