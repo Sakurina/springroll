@@ -1,0 +1,971 @@
+#!/usr/bin/env ruby
+# SpringRoll - SpringBoard beautifier
+# by Yanik Magnan - http://r-ch.net
+if Dir.entries("/Applications").include?("AppStore.app") then
+	$ostype = "darwin9"
+else
+	$ostype = "darwin8"
+end
+$user = ENV['USER']
+$args = ARGV
+$ver = "r5"
+
+# Array of AppStore applications that have special icon names.
+$special = ["CurrencyConverterApp.app", "SimpleFlashLight.app", "Exposure.app", "NYTimes.app", "aSubnet.app", "Reviews.app", "Twitterrific.app", "VNC.app", "SudokuFree.app", "AOL Radio.app", "Flashlight.app", "MySpace.app", "WeatherBug.app", "YelpIPhone_take5.app", "imaze.app", "iMmo.app", "Bubbles.app", "WritingPad.app", "Jott.app", "iYardage.app", "korebasi lite.app", "YPmobile.app", "Mobile News.app", "Rhythm.app", "WordPress.app", "RubyRepeat.app","Tanjas SOS.app","Save Benjis.app","Barcode.app","Stanza.app","Eventful.app","eReader.app","SQLiteBooks.app"]
+
+def usage
+	puts "SpringRoll (#{$ver}) - SpringBoard beautifier by Yanik Magnan"
+	puts "Usage: sr <options>"
+	puts " "
+	puts "!! IMPORTANT!"
+	puts "!! YOU MUST RUN THIS AS root ON AN iPhone!"
+	puts " "
+	puts "Options:"
+	puts "backup              Backs up all of your apps' icons"
+	puts "                    to the Default theme."
+	puts "theme <themename>   Swaps out your apps' icons with"
+	puts "                    the ones from specified theme."
+	puts "restore             Restores original UI elements."
+	puts "smbconv <themename> Place a SummerBoard theme inside"
+	puts "                    /var/root/SpringRoll and run this"
+	puts "                    command for the theme to be converted"
+	puts "                    to a compatible format."
+	puts "whatsnew            See what's new in this version."
+	puts " "
+	puts "Compatibility:      SpringRoll supports both 1.1.x and"
+	puts "                    2.0 firmwares."
+end
+
+def new
+	puts "NEW IN #{$ver}:"
+	puts "- AppStore Support!"
+	puts "- Available on Cydia thanks to the MMi repo!"
+end
+
+def bakcp(full,base)
+	print "*** #{base} ... "
+	`cp "#{full}" "/var/root/SpringRoll/Default/#{base}"`
+	print "DONE \n"
+end
+
+# NEW FROM SRA
+def backup_special(f,basename,app,filename)
+	@f = f
+	@basename = basename
+	@app = app
+	@filename = filename
+	if @f == @app then
+		if Dir.entries(Dir.pwd).include?(@filename) then
+			print "*** #{@f} - #{@filename} ... "
+			`cp "/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}" "/var/root/SpringRoll/Default/Icons/#{@basename}"`
+			print "DONE \n"
+		end
+	end
+end
+
+def b_specialcases(f,basename)
+	backup_special(f,basename,"CurrencyConverterApp.app","CurrencyAppIcon.png")
+	backup_special(f,basename,"SimpleFlashLight.app","flashlighticon.png")
+	backup_special(f,basename,"Exposure.app","Exposure.png")
+	backup_special(f,basename,"NYTimes.app","NYTApplicationIcon.png")
+	backup_special(f,basename,"aSubnet.app","logo.png")
+	backup_special(f,basename,"Reviews.app","IGN_57x57.png")
+	backup_special(f,basename,"Twitterrific.app","Icon.png")
+	backup_special(f,basename,"Twitterrific.app","Icon_free.png")
+	backup_special(f,basename,"VNC.app","vnciconLITE.png")
+	backup_special(f,basename,"VNC.app","vncicon.png")
+	backup_special(f,basename,"VNC.app","vnciconDEMO.png")
+	backup_special(f,basename,"SudokuFree.app","SudokuFreeIcon.png")
+	backup_special(f,basename,"AOL Radio.app","radio.png")
+	backup_special(f,basename,"Flashlight.app","appicon.png")
+	backup_special(f,basename,"MySpace.app","applicationIcon_prerendered.png")
+	backup_special(f,basename,"WeatherBug.app","apple-touch-icon.png")
+	backup_special(f,basename,"YelpIPhone_take5.app","yelpicon.png")
+	backup_special(f,basename,"imaze.app","maze.png")
+	backup_special(f,basename,"iMmo.app","Icon2.png")
+	backup_special(f,basename,"Bubbles.app","BubblesIcon.png")
+	backup_special(f,basename,"WritingPad.app","WritingPadlogo57X57.png")
+	backup_special(f,basename,"Jott.app","jotttouch_icon.png")
+	backup_special(f,basename,"iYardage.app","iyardage_icon_57x57_dc.png")
+	backup_special(f,basename,"korebasi lite.app","korebasi_icon.png")
+	backup_special(f,basename,"YPmobile.app","rubicon.png")
+	backup_special(f,basename,"Mobile News.app","apple-touch-icon.png")
+	backup_special(f,basename,"Rhythm.app","vSnax_Logo.png")
+	backup_special(f,basename,"WordPress.app","application-icon.png")
+	backup_special(f,basename,"RubyRepeat.app","rubyrepeat_icon.png")
+	backup_special(f,basename,"Tanjas SOS.app","AppIcon.png")
+	backup_special(f,basename,"Save Benjis.app","benji_face.png")
+	backup_special(f,basename,"Barcode.app","Barcode.png")
+	backup_special(f,basename,"Stanza.app","Icon57x57.png")
+	backup_special(f,basename,"Eventful.app","eventful-icon.png")
+	backup_special(f,basename,"eReader.app","app-icon.png")
+	backup_special(f,basename,"SQLiteBooks.app","ToDo_57.png")
+end
+
+def t_specialcases(f,basename)
+	theme_special(f,basename,"CurrencyConverterApp.app","CurrencyAppIcon.png")
+	theme_special(f,basename,"SimpleFlashLight.app","flashlighticon.png")
+	theme_special(f,basename,"Exposure.app","Exposure.png")
+	theme_special(f,basename,"NYTimes.app","NYTApplicationIcon.png")
+	theme_special(f,basename,"aSubnet.app","logo.png")
+	theme_special(f,basename,"Reviews.app","IGN_57x57.png")
+	theme_special(f,basename,"Twitterrific.app","Icon.png")
+	theme_special(f,basename,"Twitterrific.app","Icon_free.png")
+	theme_special(f,basename,"VNC.app","vnciconLITE.png")
+	theme_special(f,basename,"VNC.app","vncicon.png")
+	theme_special(f,basename,"VNC.app","vnciconDEMO.png")
+	theme_special(f,basename,"SudokuFree.app","SudokuFreeIcon.png")
+	theme_special(f,basename,"AOL Radio.app","radio.png")
+	theme_special(f,basename,"Flashlight.app","appicon.png")
+	theme_special(f,basename,"MySpace.app","applicationIcon_prerendered.png")
+	theme_special(f,basename,"WeatherBug.app","apple-touch-icon.png")
+	theme_special(f,basename,"YelpIPhone_take5.app","yelpicon.png")
+	theme_special(f,basename,"imaze.app","maze.png")
+	theme_special(f,basename,"iMmo.app","Icon2.png")
+	theme_special(f,basename,"Bubbles.app","BubblesIcon.png")
+	theme_special(f,basename,"WritingPad.app","WritingPadlogo57X57.png")
+	theme_special(f,basename,"Jott.app","jotttouch_icon.png")
+	theme_special(f,basename,"iYardage.app","iyardage_icon_57x57_dc.png")
+	theme_special(f,basename,"korebasi lite.app","korebasi_icon.png")
+	theme_special(f,basename,"YPmobile.app","rubicon.png")
+	theme_special(f,basename,"Mobile News.app","apple-touch-icon.png")
+	theme_special(f,basename,"Rhythm.app","vSnax_Logo.png")
+	theme_special(f,basename,"WordPress.app","application-icon.png")
+	theme_special(f,basename,"RubyRepeat.app","rubyrepeat_icon.png")
+	theme_special(f,basename,"Tanjas SOS.app","AppIcon.png")
+	theme_special(f,basename,"Save Benjis.app","benji_face.png")
+	theme_special(f,basename,"Barcode.app","Barcode.png")
+	theme_special(f,basename,"Stanza.app","Icon57x57.png")
+	theme_special(f,basename,"Eventful.app","eventful-icon.png")
+	theme_special(f,basename,"eReader.app","app-icon.png")
+	theme_special(f,basename,"SQLiteBooks.app","ToDo_57.png")
+end
+
+def r_specialcases(f,basename)
+	restore_special(f,basename,"CurrencyConverterApp.app","CurrencyAppIcon.png")
+	restore_special(f,basename,"SimpleFlashLight.app","flashlighticon.png")
+	restore_special(f,basename,"Exposure.app","Exposure.png")
+	restore_special(f,basename,"NYTimes.app","NYTApplicationIcon.png")
+	restore_special(f,basename,"aSubnet.app","logo.png")
+	restore_special(f,basename,"Reviews.app","IGN_57x57.png")
+	restore_special(f,basename,"Twitterrific.app","Icon.png")
+	restore_special(f,basename,"Twitterrific.app","Icon_free.png")
+	restore_special(f,basename,"VNC.app","vnciconLITE.png")
+	restore_special(f,basename,"VNC.app","vncicon.png")
+	restore_special(f,basename,"VNC.app","vnciconDEMO.png")
+	restore_special(f,basename,"SudokuFree.app","SudokuFreeIcon.png")
+	restore_special(f,basename,"AOL Radio.app","radio.png")
+	restore_special(f,basename,"Flashlight.app","appicon.png")
+	restore_special(f,basename,"MySpace.app","applicationIcon_prerendered.png")
+	restore_special(f,basename,"WeatherBug.app","apple-touch-icon.png")
+	restore_special(f,basename,"YelpIPhone_take5.app","yelpicon.png")
+	restore_special(f,basename,"imaze.app","maze.png")
+	restore_special(f,basename,"iMmo.app","Icon2.png")
+	restore_special(f,basename,"Bubbles.app","BubblesIcon.png")
+	restore_special(f,basename,"WritingPad.app","WritingPadlogo57X57.png")
+	restore_special(f,basename,"Jott.app","jotttouch_icon.png")
+	restore_special(f,basename,"iYardage.app","iyardage_icon_57x57_dc.png")
+	restore_special(f,basename,"korebasi lite.app","korebasi_icon.png")
+	restore_special(f,basename,"YPmobile.app","rubicon.png")
+	restore_special(f,basename,"Mobile News.app","apple-touch-icon.png")
+	restore_special(f,basename,"Rhythm.app","vSnax_Logo.png")
+	restore_special(f,basename,"WordPress.app","application-icon.png")
+	restore_special(f,basename,"RubyRepeat.app","rubyrepeat_icon.png")
+	restore_special(f,basename,"Tanjas SOS.app","AppIcon.png")
+	restore_special(f,basename,"Save Benjis.app","benji_face.png")
+	restore_special(f,basename,"Barcode.app","Barcode.png")
+	restore_special(f,basename,"Stanza.app","Icon57x57.png")
+	restore_special(f,basename,"Eventful.app","eventful-icon.png")
+	restore_special(f,basename,"eReader.app","app-icon.png")
+	restore_special(f,basename,"SQLiteBooks.app","ToDo_57.png")
+end
+
+# END NEW FROM SRA
+
+def backup
+	# Back up icons, dock, badge, slider resources to the Default theme
+		puts "* Backing up resources:"
+		# Change directory to /var/root
+		puts "** Changing directory to /var/root"
+		Dir.chdir '/var/root'
+		# prepare theme directories if nonexistant
+		puts "** Verifying theme directory structure"
+		if Dir.entries(Dir.pwd).include?("SpringRoll") == false then
+			print "*** Creating SpringRoll directory ... "
+			Dir.mkdir 'SpringRoll'
+			print "DONE \n"
+		end
+		Dir.chdir '/var/root/SpringRoll'
+		if Dir.entries(Dir.pwd).include?("Default") == false then
+			print "*** Creating Default directory ... "
+			Dir.mkdir 'Default'
+			print "DONE \n"
+		end
+		Dir.chdir '/var/root/SpringRoll/Default'
+		if Dir.entries(Dir.pwd).include?("Icons") == false then
+			print "*** Creating Icons directory ... "
+			Dir.mkdir 'Icons'
+			print "DONE \n"
+		end
+		# NON-ICON EXTRAS
+		# DOCK
+		puts "** Backing up Dock resources:"
+		bakcp('/System/Library/CoreServices/SpringBoard.app/SBDockBG.png','SBDockBG.png')
+		bakcp('/System/Library/CoreServices/SpringBoard.app/SBDockBG2.png','SBDockBG2.png')
+
+		# BADGE
+		puts "** Backing up Badge resources:"
+		bakcp('/System/Library/CoreServices/SpringBoard.app/SBBadgeBG.png','SBBadgeBG.png')
+
+		# SLIDERS
+		if $ostype == "darwin8" then
+			puts "** Backing up Slider resources:"
+			bakcp('/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgray.png','bottombarknobgray.png')
+			bakcp('/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgreen.png','bottombarknobgreen.png')
+			bakcp('/System/Library/Frameworks/TelephonyUI.framework/bottombarknobred.png','bottombarknobred.png')
+			bakcp('/System/Library/Frameworks/TelephonyUI.framework/bottombarbkgndlock.png','bottombarbkgndlock.png')
+			bakcp('/System/Library/Frameworks/TelephonyUI.framework/bottombarlocktextmask.png','bottombarlocktextmask.png')
+			bakcp('/System/Library/Frameworks/TelephonyUI.framework/topbarbkgnd.png','topbarbkgnd.png')
+		else
+			puts "** Backing up Slider resources:"
+			bakcp('/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgray.png','bottombarknobgray.png')
+			bakcp('/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgreen.png','bottombarknobgreen.png')
+			bakcp('/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobred.png','bottombarknobred.png')
+			bakcp('/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarbkgndlock.png','bottombarbkgndlock.png')
+			bakcp('/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarlocktextmask.png','bottombarlocktextmask.png')
+			bakcp('/System/Library/PrivateFrameworks/TelephonyUI.framework/topbarbkgnd.png','topbarbkgnd.png')
+		end
+		# BATTERY
+		puts "** Backing up Battery resources:"
+		(1..17).each do |i|
+			bakcp("/System/Library/CoreServices/SpringBoard.app/BatteryBG_#{i}.png","BatteryBG_#{i}.png")
+		end
+		# STATUSBAR
+		puts "** Backing up StatusBar resources:"
+		bakcp('/System/Library/CoreServices/SpringBoard.app/Default_BG.png','Default_BG.png')
+		bakcp('/System/Library/CoreServices/SpringBoard.app/FSO_BG.png','FSO_BG.png')
+		bakcp('/System/Library/CoreServices/SpringBoard.app/FST_BG.png','FST_BG.png')
+
+		# ICONS
+		puts "** Backing up application icons:"
+		Dir.chdir '/Applications'
+		$apps = Dir.entries('/Applications')
+		$apps.delete('.')
+		$apps.delete('..')
+		while $apps.nitems > 0:
+			if File.directory?("/Applications/#{$apps[0]}") then
+				Dir.chdir("/Applications/#{$apps[0]}")
+				def mobilemusicplayer
+					bakcp('/Applications/MobileMusicPlayer.app/icon-AudioPlayer.png','Icons/MobileMusicPlayer-AudioPlayer.png')
+					bakcp('/Applications/MobileMusicPlayer.app/icon-MediaPlayer.png','Icons/MobileMusicPlayer-MediaPlayer.png')
+					bakcp('/Applications/MobileMusicPlayer.app/icon-VideoPlayer.png','Icons/MobileMusicPlayer-VideoPlayer.png')
+				end
+				def mobileslideshow
+					bakcp('/Applications/MobileSlideShow.app/icon-Camera.png', 'Icons/MobileSlideShow-Camera.png')
+					bakcp('/Applications/MobileSlideShow.app/icon-Photos.png', 'Icons/MobileSlideShow-Photos.png')
+				end
+				def normalicon
+					print "*** #{$apps[0]} - icon.png ... "
+					basename = $apps[0].gsub('.app','.png')
+					case Dir.entries(Dir.pwd).include?('icon.png')
+						when true: `cp "/Applications/#{$apps[0]}/icon.png" "/var/root/SpringRoll/Default/Icons/#{basename}"` and print "DONE \n"
+						when false: print "NOT FOUND! \n"
+					end
+				end
+				case $apps[0]
+					when 'MobileMusicPlayer.app': mobilemusicplayer
+					when 'MobileSlideShow.app': mobileslideshow
+					else normalicon
+				end
+				$apps.shift
+			else
+				$apps.shift
+			end
+		end
+		# APP STORE SUPPORT BEGINS HERE
+		# ANYTHING FOLLOWING THIS COULD TERRIBLY BREAK D:
+		if ($ostype == "darwin9") then
+			puts "** Backing up purchased app icons:"
+			Dir.chdir('/var/mobile/Applications')
+			$apps = Dir.entries(Dir.pwd)
+			$apps.delete('.')
+			$apps.delete('..')
+			while $apps.nitems > 0 do
+				Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
+				Dir.entries(Dir.pwd).each do |f|
+					if f.include? ".app" then
+						Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
+						basename = f.gsub('.app','.png')
+						# GENERAL CASES (icon.png and Icon.png)
+						if $special.include?(f) then
+							# SPECIAL CASES
+							b_specialcases(f,basename)
+						else
+							if Dir.entries(Dir.pwd).include?("icon.png") then
+								print "*** #{f} - icon.png ... "
+								`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png" "/var/root/SpringRoll/Default/Icons/#{basename}"`
+								print "DONE \n"
+							end
+							if Dir.entries(Dir.pwd).include?("Icon.png") then
+								print "*** #{f} - Icon.png ... "
+								`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png" "/var/root/SpringRoll/Default/Icons/#{basename}"`
+								print "DONE \n"
+							end
+						end
+						if Dir.entries("/var/root/SpringRoll").include?("AppStoreSupport") then
+							`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist" "/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist"`
+						else
+							Dir.mkdir("/var/root/SpringRoll/AppStoreSupport")
+							`cp "/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist" "/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist"`
+						end
+					end
+				end
+				$apps.shift
+			end
+		end
+		# APP STORE SECTION ENDS HERE
+		# PLEASE PLEASE PLEASE DON'T BREAK!
+		puts "* Backup complete."
+		puts "  To restore, use 'sr restore'."
+end
+
+def patch(iconfile,f)
+	# SpringRoll Patcher
+	# First -> Patch the CodeResources
+	files_done = nil
+	supp_passed = nil
+	rsrc_file = open("CodeResources","r+")
+	print "DONE \n"
+	rsrc_count = 1
+	# State of the process.
+	supp_passed = nil
+	first_pass = nil
+	files_done = nil
+	rsrc_file.each { |line|
+		if first_pass == nil then
+			if files_done == true then
+				if supp_passed.nil? then
+					if (line =~ /.supp/) and (line =~ /SC_Info/) then
+						supp_passed = true
+					end
+				end
+				if supp_passed == true then
+					if line.match "\t\t</dict>" then
+						rsrc_file.puts "\t\t<key>#{iconfile}</key>"
+						rsrc_file.puts "\t\t<dict>"
+						rsrc_file.puts "\t\t\t<key>omit</key>"
+						rsrc_file.puts "\t\t\t<true/>"
+						rsrc_file.puts "\t\t\t<key>weight</key>"
+						rsrc_file.puts "\t\t\t<integer>10000</integer>"
+						rsrc_file.puts "\t\t</dict>"
+						rsrc_file.puts "\t</dict>"
+						rsrc_file.puts "</dict>"
+						rsrc_file.puts "</plist>"
+						first_pass = true
+					end
+				end
+			end
+			if files_done.nil? then
+				if line.match "\t\t<key>#{iconfile}</key>" then
+					$icon_line = rsrc_count
+				end
+			end
+			if line.match "\t<key>rules</key>" then
+				files_done = true
+			end
+			rsrc_count += 1
+		end
+	}
+	rsrc_file.close
+
+	# First - 2nd pass
+	rsrc2_file = open("CodeResources","r+")
+	second_count = 1
+	print "** Patching CodeResources (second pass) ... "
+	rsrc2_file.each { |line|
+		if (second_count == ($icon_line - 1)) then
+			rsrc2_file.print "      "
+			iconfile.length.times do
+				rsrc2_file.print " "
+			end
+			rsrc2_file.puts "      "
+			rsrc2_file.puts "        "
+			rsrc2_file.puts "                             "
+			rsrc2_file.puts "          "
+		end
+		second_count += 1
+	}
+	rsrc2_file.close
+	`plutil -c xml1 CodeResources`
+	
+	# First - Last : Keep a SHA1 of the patched CodeResources in SpringRoll/AppStoreSupport
+	`touch "/var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources"`
+	rsrc_shafile = open("/var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources","w")
+	rsrc_sha1 = `openssl sha1 CodeResources`
+	rsrc_sha1 = rsrc_sha1.chomp
+	rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
+	rsrc_shafile.puts rsrc_sha1
+	rsrc_shafile.close
+
+	# Second -> Patch the ResourceRules.plist
+	supp2_passed = nil
+	`plutil -c xml1 ResourceRules.plist`
+	rule_complete = nil
+	rule_file = open("ResourceRules.plist","r+")
+	rule_file.each { |line|
+		if (line =~ /SC_Info/) and (line =~ /.supp/) then
+			supp2_passed = true
+		end
+		if (supp2_passed == true) then
+			if line.match("\t\t</dict>") then
+				rule_file.puts "\t\t<key>#{iconfile}</key>"
+				rule_file.puts "\t\t<dict>"
+				rule_file.puts "\t\t\t<key>omit</key>"
+				rule_file.puts "\t\t\t<true/>"
+				rule_file.puts "\t\t\t<key>weight</key>"
+				rule_file.puts "\t\t\t<integer>10000</integer>"
+				rule_file.puts "\t\t</dict>"
+				rule_file.puts "\t</dict>"
+				rule_file.puts "</dict>"
+				rule_file.puts "</plist>"
+			end	
+		end
+	}
+	rule_file.close
+	`plutil -c binary1 ResourceRules.plist`
+	`touch "/var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist"`
+	rule_shafile = open("/var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist","w")
+	rule_sha1 = `openssl sha1 ResourceRules.plist`
+	rule_sha1 = rule_sha1.chomp
+	rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
+	rule_shafile.puts rule_sha1
+	rule_shafile.close
+end
+
+def thcp(base, full)
+	if Dir.entries(Dir.pwd).include?(base) then
+		print "*** #{base} ... "
+		`cp "#{Dir.pwd}/#{base}" "#{full}"`
+		print "DONE \n"
+	else
+		puts "*** #{base} ... NOT FOUND"
+	end
+end
+
+
+def theme_special(f, basename, app, filename)
+	@f = f
+	@basename = basename
+	@app = app
+	@filename = filename
+	if f == @app then
+		if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?(@basename) then
+			print "*** #{@f} - #{@filename} ... "
+			shaverify(@filename,@f,@basename)
+			print "DONE \n"
+		end
+	end	
+end
+
+def theme
+	# Keep people from screwing their iPhones badly by verifying if the theme is Default.
+	raise StandardError, "DO NOT USE SPRINGROLL THEME DEFAULT! If you want to restore your backup, use sr restore." if ARGV[1] == "Default"
+	puts "* Theming interface with theme: #{ARGV[1]}"
+	# Verify to see if the theme in question exists!
+	print "** Does the theme even exist to begin with? ... "
+	Dir.chdir '/var/root/SpringRoll'
+	if Dir.entries(Dir.pwd).include?(ARGV[1]) == false then
+		print "NO \n"
+		raise StandardError, "The theme you have specified does not exist! Make sure your theme is one word only!"
+	end
+	print "YES \n"
+	# Force the user to run a backup if he/she hasn't yet.
+	if Dir.entries(Dir.pwd).include?("Default") == false then
+		puts "** WARNING: I strongly recommend running"
+		puts "   'sr backup' before doing this to keep"
+		puts "   backup of your UI just in case."
+		raise StandardError, "Run sr backup to back things up for your own safety."
+	end
+	Dir.chdir("/var/root/SpringRoll/#{ARGV[1]}")
+	# NON-ICON EXTRAS
+	# DOCK
+	puts "** Copying dock resources:"
+	if Dir.entries(Dir.pwd).include?("Dock.png") then
+		print "*** Dock.png ... "
+		`cp "#{Dir.pwd}/Dock.png" "/System/Library/CoreServices/SpringBoard.app/SBDockBG.png"`
+		print "[1] "
+		`cp "#{Dir.pwd}/Dock.png" "/System/Library/CoreServices/SpringBoard.app/SBDockBG2.png"`
+		print "[2] DONE \n"
+	else
+		puts "*** Dock.png ... NOT FOUND"
+	end
+	# BADGE
+	puts "** Copying badge resources:"
+	thcp('Badge.png','/System/Library/CoreServices/SpringBoard.app/SBBadgeBG.png')
+	# SLIDERS
+	# Disabled on 2.0.
+	if $ostype == "darwin8" then
+		puts "** Copying slider resources:"
+		thcp('Slider-Gray.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgray.png')
+		thcp('Slider-Green.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgreen.png')
+		thcp('Slider-Red.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobred.png')
+		thcp('Slider-bkgndlock.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarbkgndlock.png')
+		thcp('Slider-textmask.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarlocktextmask.png')
+		thcp('Slider-topbarbkgnd.png','/System/Library/Frameworks/TelephonyUI.framework/topbarbkgnd.png')
+	else
+		puts "** Copying slider resources:"
+		thcp('Slider-Gray.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgray.png')
+		thcp('Slider-Green.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgreen.png')
+		thcp('Slider-Red.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobred.png')
+		thcp('Slider-bkgndlock.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarbkgndlock.png')
+		thcp('Slider-textmask.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarlocktextmask.png')
+		thcp('Slider-topbarbkgnd.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/topbarbkgnd.png')
+	end
+	# BATTERY
+	puts "** Copying battery resources:"
+	if Dir.entries(Dir.pwd).include?("Battery") then
+		Dir.chdir("Battery")
+		(1..17).each do |i|
+			thcp("BatteryBG_#{i}.png","/System/Library/CoreServices/SpringBoard.app/BatteryBG_#{i}.png")
+		end
+		Dir.chdir("..")
+	else
+		puts "*** No battery subfolder found."
+	end
+	# STATUS BAR
+	puts "** Copying status bar resources:"
+	thcp('StatusBar-Default.png','/System/Library/CoreServices/SpringBoard.app/Default_BG.png')
+	thcp('StatusBar-FSO.png','/System/Library/CoreServices/SpringBoard.app/FSO_BG.png')
+	thcp('StatusBar-FST.png','/System/Library/CoreServices/SpringBoard.app/FST_BG.png')
+
+	# ICONS
+	if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}").include?('Icons') then
+	puts "** Copying icons..."
+        Dir.chdir('/Applications')
+        $apps = Dir.entries('/Applications')
+        $apps.delete('.')
+        $apps.delete('..')
+        while $apps.nitems > 0:
+		if File.directory?("/Applications/#{$apps[0]}") then
+			Dir.chdir("/Applications/#{$apps[0]}")
+			def tmobilemusicplayer
+ 	                	if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-AudioPlayer.png') then
+					print "*** MobileMusicPlayer-AudioPlayer.png ... "
+					`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-AudioPlayer.png" "/Applications/MobileMusicPlayer.app/icon-AudioPlayer.png"`
+					print "DONE \n"
+  	                      	else
+ 	                               	puts "*** MobileMusicPlayer-AudioPlayer.png ... "
+                       		end
+				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-MediaPlayer.png') then
+					print "*** MobileMusicPlayer-MediaPlayer.png ... "
+                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-MediaPlayer.png" "/Applications/MobileMusicPlayer.app/icon-MediaPlayer.png"`
+                                	print "DONE \n"
+                        	else
+                                	puts "*** MobileMusicPlayer-MediaPlayer.png ... NOT FOUND"
+                        	end
+				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-VideoPlayer.png') then
+					print "*** MobileMusicPlayer-VideoPlayer.png ... "
+                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileMusicPlayer-VideoPlayer.png" "/Applications/MobileMusicPlayer.app/icon-VideoPlayer.png"`
+                                	print "DONE \n"
+                        	else
+                                	puts "*** MobileMusicPlayer-VideoPlayer.png ... NOT FOUND!"
+                        	end
+                	end
+                	def tmobileslideshow
+				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileSlideShow-Camera.png') then
+					print "*** MobileSlideShow-Camera.png ... "
+                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileSlideShow-Camera.png" "/Applications/MobileSlideShow.app/icon-Camera.png"`
+                                	print "DONE \n"
+                        	else
+                                	puts "*** MobileSlideShow-Camera.png ... NOT FOUND"
+                        	end
+				if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?('MobileSlideShow-Photos.png') then
+					print "*** MobileSlideShow-Photos.png ... "
+                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/MobileSlideShow-Photos.png" "/Applications/MobileSlideShow.app/icon-Photos.png"`
+                                	print "DONE \n"
+                        	else
+                                	puts "*** MobileSlideShow-Photos.png ... NOT FOUND"
+                        	end
+                	end
+                	def tnormalicon
+                        	print "*** #{$apps[0]} - icon.png ... "
+                        	basename = $apps[0].gsub('.app','.png')
+                        	if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?(basename) then
+                                	`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}" "/Applications/#{$apps[0]}/icon.png"`
+                                	print "DONE \n"
+                        	else
+                                	print "NOT FOUND! \n"
+                        	end
+                	end
+                	case $apps[0]
+                        	when 'MobileMusicPlayer.app': tmobilemusicplayer
+                        	when 'MobileSlideShow.app': tmobileslideshow
+                        	else tnormalicon
+                	end
+                	$apps.shift
+		else
+			$apps.shift
+		end
+        end
+	else
+		puts "** No Icons folder detected. Skipping icons."
+	end
+	# APP STORE SUPPORT BEGINS HERE!
+	if ($ostype == "darwin9") and (Dir.entries("/var/root/SpringRoll/#{ARGV[1]}").include?('Icons')) then
+		puts "** Copying purchased app icons:"
+		Dir.chdir("/Applications")
+		$apps = Dir.entries("/var/mobile/Applications")
+		$apps.delete "."
+		$apps.delete ".."
+		while $apps.nitems > 0:
+			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
+			Dir.entries(Dir.pwd).each do |f|
+				if f.include? ".app" then
+					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
+					basename = f.gsub('.app','.png')
+					if Dir.entries("/var/root/SpringRoll/Default/Icons").include?(basename) then
+						if $special.include?(f) then
+							t_specialcases(f,basename)
+						else
+							if Dir.entries(Dir.pwd).include?("icon.png") then
+								print "*** #{f} - icon.png ... "
+								shaverify("icon.png",f,basename)
+								print "DONE \n"
+							end
+							if Dir.entries(Dir.pwd).include?("Icon.png") then
+								print "*** #{f} - Icon.png ... "
+								shaverify("Icon.png",f,basename)		
+								print "DONE \n"
+							end
+						end
+						`plutil -c xml1 Info.plist`
+						`plutil -1 UIPrerenderedIcon Info.plist`
+						`plutil -c binary1 Info.plist`
+					end
+				end
+			end
+			$apps.shift
+		end
+	end
+	# END APP STORE SUPPORT YEAH!
+	`killall SpringBoard`
+	puts "* Theming complete."
+	puts "  To restore: use 'sr restore'"
+	puts "  Device will respring shortly."
+end
+
+def shaverify(iconname,f,basename)
+	# Verify the patch state of CodeResources and ResourceRules.plist
+	# Does CodeResources exist?
+	if Dir.entries(Dir.pwd).include?("CodeResources") then
+		@rsrc_exists = true
+	else
+		@rsrc_exists = false
+	end
+	# Does ResourceRules exist?
+	if Dir.entries(Dir.pwd).include?("ResourceRules.plist") then
+		@rule_exists = true
+	else
+		@rule_exists = false
+	end
+	# If both files exist, then...
+	if (@rsrc_exists == true) and (@rule_exists == true) then
+		# Do they both have SHA1 files?
+		if Dir.entries("/var/root/SpringRoll/AppStoreSupport").include?("#{f}-CodeResources") then
+			@rsrc_sha_exists = true
+		else
+			@rsrc_sha_exists = false
+		end
+
+		if Dir.entries("/var/root/SpringRoll/AppStoreSupport").include?("#{f}-ResourceRules.plist") then
+			@rule_sha_exists = true
+		else
+			@rule_sha_exists = false
+		end
+
+		# If so...
+		if (@rsrc_sha_exists == true) and (@rule_sha_exists == true) then
+			# Do they match to the sha of the actual file?
+			# Get the contents of the saved SHA
+			# This is a cat call because it's faster to implement and essentially has the same result.
+			@rsrc_saved_sha = `cat "/var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources"`
+			@rsrc_saved_sha = @rsrc_saved_sha.chomp
+			@rule_saved_sha = `cat "/var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist"`
+			@rule_saved_sha = @rule_saved_sha.chomp
+			# Get the real SHA
+			@rsrc_real_sha = `openssl sha1 "CodeResources"`
+			@rsrc_real_sha = @rsrc_real_sha.chomp
+			@rsrc_real_sha.gsub!("SHA1(CodeResources)= ","")
+			@rule_real_sha = `openssl sha1 "ResourceRules.plist"`
+			@rule_real_sha = @rule_real_sha.chomp
+			@rule_real_sha.gsub!("SHA1(ResourceRules.plist)= ","")
+			# If they match:
+			if (@rsrc_real_sha == @rsrc_saved_sha) and (@rule_real_sha == @rule_saved_sha) then
+				# Simply copy the icon over, no questions asked.
+				`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}"`
+			else
+				# And if they don't, refuse to do anything with that app and give a warning.
+				puts "\n*** REGARDING #{f}:"
+				puts "    This application's CodeResources or ResourceRules.plist files"
+				puts "    have been modified by an outside source. Changing the icon"
+				puts "    could cause the application to stop functioning. Therefore,"
+				puts "    SpringRoll recommends you reinstall the applications and"
+				puts "    delete its footprint files at the following path:"
+				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources"
+				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist"
+				puts "    -> This application remains untouched."
+			end
+		else
+			# If the files don't exist, then the application is not patched!
+			patch(iconname,f)
+			print "PATCHED ... "
+			`cp "/var/root/SpringRoll/#{ARGV[1]}/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}"`
+		end
+	end
+
+
+end
+
+
+def restcp(base, full)
+	print "*** #{base} ... "
+	`cp "/var/root/SpringRoll/Default/#{base}" "#{full}"`
+	print "DONE \n"
+end
+
+def restore_special(f,basename,app,filename)
+	@f = f
+	@basename = basename
+	@app = app
+	@filename = filename
+	if @f == @app then
+		if Dir.entries("/var/root/SpringRoll/Default/Icons").include?(@basename) then
+			print "*** #{@f} - #{@filename} ... "
+			`cp "/var/root/SpringRoll/Default/Icons/#{@basename}" "/var/mobile/Applications/#{$apps[0]}/#{@f}/#{@filename}"`
+			print "DONE \n"
+		end
+	end
+end
+
+
+
+def restore
+	puts "* Restoring backup."
+	puts "** Restoring original Dock resources:"
+	restcp('SBDockBG.png','/System/Library/CoreServices/SpringBoard.app/SBDockBG.png')
+	restcp('SBDockBG2.png','/System/Library/CoreServices/SpringBoard.app/SBDockBG2.png')
+	puts "** Restoring original Badge resources:"
+	restcp('SBBadgeBG.png','/System/Library/CoreServices/SpringBoard.app/SBBadgeBG.png')
+	# SLIDERS
+	# Only on 1.1.x
+	if $ostype == "darwin8" then
+		puts "** Restoring original Slider resources:"
+		restcp('bottombarknobgray.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgray.png')
+		restcp('bottombarknobgreen.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgreen.png')
+		restcp('bottombarknobred.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobred.png')
+		restcp('bottombarbkgndlock.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarbkgndlock.png')
+		restcp('bottombarlocktextmask.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarlocktextmask.png')
+		restcp('topbarbkgnd.png','/System/Library/Frameworks/TelephonyUI.framework/topbarbkgnd.png')
+	else
+		puts "** Restoring original Slider resources:"
+		restcp('bottombarknobgray.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgray.png')
+		restcp('bottombarknobgreen.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgreen.png')
+		restcp('bottombarknobred.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobred.png')
+		restcp('bottombarbkgndlock.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarbkgndlock.png')
+		restcp('bottombarlocktextmask.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarlocktextmask.png')
+		restcp('topbarbkgnd.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/topbarbkgnd.png')
+	end
+	puts "** Restoring original Battery resources:"
+	(1..17).each do |i|
+		restcp("BatteryBG_#{i}.png","/System/Library/CoreServices/SpringBoard.app/BatteryBG_#{i}.png")
+	end
+	puts "** Restoring original StatusBar resources:"
+	restcp('Default_BG.png','/System/Library/CoreServices/SpringBoard.app/Default_BG.png')
+	restcp('FSO_BG.png','/System/Library/CoreServices/SpringBoard.app/FSO_BG.png')
+	restcp('FST_BG.png','/System/Library/CoreServices/SpringBoard.app/FST_BG.png')
+	puts '** Restoring application icons:'
+	Dir.chdir('/Applications')
+	$apps = Dir.entries('/Applications')
+	$apps.delete('.')
+	$apps.delete('..')
+	while $apps.nitems > 0:
+		if File.directory?("/Applications/#{$apps[0]}") then
+			Dir.chdir("/Applications/#{$apps[0]}")
+			def rmobilemusicplayer
+				restcp('Icons/MobileMusicPlayer-AudioPlayer.png', "#{Dir.pwd}/icon-AudioPlayer.png")
+				restcp('Icons/MobileMusicPlayer-MediaPlayer.png', "#{Dir.pwd}/icon-MediaPlayer.png")
+				restcp('Icons/MobileMusicPlayer-VideoPlayer.png', "#{Dir.pwd}/icon-VideoPlayer.png")
+			end
+			def rmobileslideshow
+				restcp('Icons/MobileSlideShow-Camera.png', "#{Dir.pwd}/icon-Camera.png")
+				restcp('Icons/MobileSlideShow-Photos.png', "#{Dir.pwd}/icon-Photos.png")
+			end
+			def rnormalicon
+				print "*** #{$apps[0]} - icon.png ... "
+				basename = $apps[0].gsub('.app','.png')
+				if Dir.entries('/var/root/SpringRoll/Default/Icons').include?(basename) then
+					`cp "/var/root/SpringRoll/Default/Icons/#{basename}" "/Applications/#{$apps[0]}/icon.png"`
+					print "DONE \n"
+				else
+					print "NOT FOUND! \n"
+				end
+			end
+			case $apps[0]
+				when 'MobileMusicPlayer.app': rmobilemusicplayer
+				when 'MobileSlideShow.app': rmobileslideshow
+				else rnormalicon
+			end
+			$apps.shift
+		else
+			$apps.shift
+		end
+	end
+	# APPSTORE SUPPORT OMGOMGOMGOMG
+	if ($ostype == "darwin9") then
+		puts "** Restoring purchased app icons:"
+		Dir.chdir("/var/mobile/Applications")
+		$apps = Dir.entries("/var/mobile/Applications")
+		$apps.delete "."
+		$apps.delete ".."
+		while $apps.nitems > 0:
+			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
+			Dir.entries(Dir.pwd).each do |f|
+				if f.include? ".app" then
+					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
+					basename = f.gsub('.app', '.png')
+					if Dir.entries("/var/root/SpringRoll/Default/Icons").include?(basename) then
+						# Detect special cases
+						if $special.include?(f) then
+							r_specialcases(f,basename)
+						else
+							if Dir.entries(Dir.pwd).include?("icon.png") then
+								print "*** #{f} - icon.png ... "
+								`cp "/var/root/SpringRoll/Default/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png"`
+								print "DONE \n"
+							end
+							if Dir.entries(Dir.pwd).include?("Icon.png") then
+								print "*** #{f} - Icon.png ... "
+								`cp "/var/root/SpringRoll/Default/Icons/#{basename}" "/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png"`
+								print "DONE \n"
+							end
+						end
+						if Dir.entries("/var/root/SpringRoll").include?("AppStoreSupport") then			
+							if Dir.entries("/var/root/SpringRoll/AppStoreSupport").include?("#{f}-Info.plist") then
+								`cp "/var/root/SpringRoll/AppStoreSupport/#{f}-Info.plist" "/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist"`
+							end
+						else
+							Dir.mkdir("/var/root/SpringRoll/AppStoreSupport")
+						end
+	
+					else
+						puts "** #{$apps[0]} - #{f} ... NOT FOUND"
+					end
+				end
+			end
+			$apps.shift
+		end
+	end
+	# APPSTORE SUPPORT OMGOMGOMGOMG
+	`killall SpringBoard`
+	puts "* Interface restored."
+	puts "  Device will respring shortly."
+end
+
+def smbmv(old,new)
+	if Dir.entries(Dir.pwd).include?(old) then
+		print "** #{old} -> #{new} ... "
+		`mv "#{Dir.pwd}/#{old}" "#{Dir.pwd}/#{new}"`
+		print "DONE \n"
+	else
+		puts "** #{old} ... NOT FOUND"
+	end
+end
+
+def smbconv
+	Dir.chdir("/var/root/SpringRoll/#{ARGV[1]}")
+	puts "* Renaming status bar."
+	smbmv("StatusBar.png","StatusBar-FSO.png")
+	puts "* Converting SMB Icons directory to SpringRoll format."
+	Dir.chdir("/var/root/SpringRoll/#{ARGV[1]}/Icons")
+	smbmv("Calendar.png","MobileCal.png")
+	smbmv("Camera.png","MobileSlideShow-Camera.png")
+	smbmv("Clock.png","MobileTimer.png")
+	smbmv("Contacts.png","MobileAddressBook.png")
+	smbmv("Mail.png","MobileMail.png")
+	smbmv("Music.png","MobileMusicPlayer-AudioPlayer.png")
+	smbmv("Notes.png","MobileNotes.png")
+	smbmv("Phone.png","MobilePhone.png")
+	smbmv("Photos.png","MobileSlideShow-Photos.png")
+	smbmv("Safari.png","MobileSafari.png")
+	smbmv("Settings.png","Preferences.png")
+	smbmv("Text.png","MobileSMS.png")
+	smbmv("Videos.png","MobileMusicPlayer-VideoPlayer.png")
+	smbmv("iPod.png","MobileMusicPlayer-MediaPlayer.png")
+	smbmv("iTunes.png","MobileStore.png")
+end
+
+def manualprep
+		Dir.chdir("/var/mobile/Applications")
+		$apps = Dir.entries("/var/mobile/Applications")
+		$apps.delete "."
+		$apps.delete ".."
+		while $apps.nitems > 0:
+			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
+			Dir.entries(Dir.pwd).each do |f|
+				if f.include? ".app" then
+					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
+					puts("* Preparing manually-edited CodeResources/ResourceRules.plist footprint files.")
+					# CodeResources
+					`touch "/var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources"`
+					rsrc_shafile = open("/var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources","w")
+					rsrc_sha1 = `openssl sha1 CodeResources`
+					rsrc_sha1 = rsrc_sha1.chomp
+					rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
+					rsrc_shafile.puts rsrc_sha1
+					rsrc_shafile.close
+					# ResourceRules.plist
+					`plutil -c binary1 ResourceRules.plist`
+					`touch "/var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist"`
+					rule_shafile = open("/var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist","w")
+					rule_sha1 = `openssl sha1 ResourceRules.plist`
+					rule_sha1 = rule_sha1.chomp
+					rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
+					rule_shafile.puts rule_sha1
+					rule_shafile.close
+				end
+			end
+			$apps.shift
+		end
+end
+
+def proceed(action)
+	# Verify to see if user is root.
+	if $user != 'root' then
+		raise StandardError, "You must run this as root! You cannot use su or sudo."
+	end
+	# Dispatch orders.
+	case action
+		when 'backup': backup # WORKING!
+		when 'theme': theme # WORKING!
+		when 'restore': restore # WORKING!
+		when 'smbconv': smbconv # WORKING!
+		when 'manualprep': manualprep
+	end
+end
+
+# ACTUAL RUNNING CODE:
+case ARGV[0]
+	when nil: usage
+	when 'r': proceed(restore)
+	when 't': proceed(theme)
+	when 'b': proceed(backup)
+	when 's': proceed(smbconv)
+	when 'm': proceed(manualprep)
+	when 'restore': proceed(restore)
+	when 'backup': proceed(backup)
+	when 'theme': proceed(theme)
+	when 'smbconv': proceed(smbconv)
+	when 'whatsnew': new
+	when 'manualprep': manualprep
+	else usage
+end
