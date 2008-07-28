@@ -1,6 +1,30 @@
 #!/usr/bin/env ruby
 # SpringRoll - SpringBoard beautifier
-# by Yanik Magnan - http://r-ch.net
+# by Yanik Magnan - http://r-ch.net/sr
+# == Usage
+#
+# sr [OPTIONS]
+#
+# backup
+#   backs up current interface
+#
+# theme [themename]
+#   applies the specified theme
+#
+# restore
+#   restores backed up interface
+#
+# smbconv [themename]
+#   converts SummerBoard themes into SpringRoll themes
+#
+# -h, --help, help
+#   shows this help message
+
+require 'rdoc/usage'
+
+$ver = "r6"
+# Determine whether or not the device is running 2.0 (darwin9)
+# or 1.1.x (darwin8) by seeing if AppStore exists.
 if Dir.entries("/Applications").include?("AppStore.app") then
 	$ostype = "darwin9"
 else
@@ -8,8 +32,9 @@ else
 end
 $user = ENV['USER']
 $args = ARGV
-$ver = "r5"
+$ver = "r6-github"
 
+# Exceptions hash table courtesy of fujin
 exceptions = {
 "CurrencyConverterApp.app" => "CurrencyAppIcon.png",
 "SimpleFlashLight.app" => "flashlighticon.png",
@@ -54,31 +79,10 @@ exceptions.sort.each do |app, icon|
   end
 end
 
+# TO BE REPLACED BY VASTLY SUPERIOR EXCEPTIONS HASH TABLE:
 # Array of AppStore applications that have special icon names.
 $special = ["CurrencyConverterApp.app", "SimpleFlashLight.app", "Exposure.app", "NYTimes.app", "aSubnet.app", "Reviews.app", "Twitterrific.app", "VNC.app", "SudokuFree.app", "AOL Radio.app", "Flashlight.app", "MySpace.app", "WeatherBug.app", "YelpIPhone_take5.app", "imaze.app", "iMmo.app", "Bubbles.app", "WritingPad.app", "Jott.app", "iYardage.app", "korebasi lite.app", "YPmobile.app", "Mobile News.app", "Rhythm.app", "WordPress.app", "RubyRepeat.app","Tanjas SOS.app","Save Benjis.app","Barcode.app","Stanza.app","Eventful.app","eReader.app","SQLiteBooks.app"]
 
-def usage
-	puts "SpringRoll (#{$ver}) - SpringBoard beautifier by Yanik Magnan"
-	puts "Usage: sr <options>"
-	puts " "
-	puts "!! IMPORTANT!"
-	puts "!! YOU MUST RUN THIS AS root ON AN iPhone!"
-	puts " "
-	puts "Options:"
-	puts "backup              Backs up all of your apps' icons"
-	puts "                    to the Default theme."
-	puts "theme <themename>   Swaps out your apps' icons with"
-	puts "                    the ones from specified theme."
-	puts "restore             Restores original UI elements."
-	puts "smbconv <themename> Place a SummerBoard theme inside"
-	puts "                    /var/root/SpringRoll and run this"
-	puts "                    command for the theme to be converted"
-	puts "                    to a compatible format."
-	puts "whatsnew            See what's new in this version."
-	puts " "
-	puts "Compatibility:      SpringRoll supports both 1.1.x and"
-	puts "                    2.0 firmwares."
-end
 
 def new
 	puts "NEW IN #{$ver}:"
@@ -999,7 +1003,7 @@ end
 
 # ACTUAL RUNNING CODE:
 case ARGV[0]
-	when nil: usage
+	when nil: RDoc::usage
 	when 'r': proceed(restore)
 	when 't': proceed(theme)
 	when 'b': proceed(backup)
@@ -1011,5 +1015,5 @@ case ARGV[0]
 	when 'smbconv': proceed(smbconv)
 	when 'whatsnew': new
 	when 'manualprep': manualprep
-	else usage
+	else RDoc::usage
 end
