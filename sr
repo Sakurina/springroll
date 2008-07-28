@@ -796,23 +796,20 @@ def restore
 	puts "** Restoring original Badge resources:"
 	restcp('SBBadgeBG.png','/System/Library/CoreServices/SpringBoard.app/SBBadgeBG.png')
 	# SLIDERS
-	# Only on 1.1.x
-	if $ostype == "darwin8" then
-		puts "** Restoring original Slider resources:"
-		restcp('bottombarknobgray.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgray.png')
-		restcp('bottombarknobgreen.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobgreen.png')
-		restcp('bottombarknobred.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarknobred.png')
-		restcp('bottombarbkgndlock.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarbkgndlock.png')
-		restcp('bottombarlocktextmask.png','/System/Library/Frameworks/TelephonyUI.framework/bottombarlocktextmask.png')
-		restcp('topbarbkgnd.png','/System/Library/Frameworks/TelephonyUI.framework/topbarbkgnd.png')
-	else
-		puts "** Restoring original Slider resources:"
-		restcp('bottombarknobgray.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgray.png')
-		restcp('bottombarknobgreen.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobgreen.png')
-		restcp('bottombarknobred.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarknobred.png')
-		restcp('bottombarbkgndlock.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarbkgndlock.png')
-		restcp('bottombarlocktextmask.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/bottombarlocktextmask.png')
-		restcp('topbarbkgnd.png','/System/Library/PrivateFrameworks/TelephonyUI.framework/topbarbkgnd.png')
+	case $ostype
+		when "darwin8": slider_prefix = "/System/Library/Frameworks/TelephonyUI.framework"
+		when "darwin9": slider_prefix = "/System/Library/PrivateFrameworks/TelephonyUI.framework"
+	end
+	puts "** Restoring original Slider resources:"
+	slider_rsrc = {
+		"bottombarknobgray.png" => "#{slider_prefix}/bottombarknobgray.png",
+		"bottombarknobgreen.png" => "#{slider_prefix}/bottombarknobgreen.png",
+		"bottombarknobred.png" => "#{slider_prefix}/bottombarknobred.png",
+		"bottombarbkgndlock.png" => "#{slider_prefix}/bottombarbkgndlock.png",
+		"bottombarlocktextmask.png" => "#{slider_prefix}/bottombartextmask.png",
+		"topbarbkgnd.png" => "#{slider_prefix}/topbarbkgnd.png" }
+	slider_rsrc.each do |src,dest|
+		restcp(src,dest)
 	end
 	puts "** Restoring original Battery resources:"
 	(1..17).each do |i|
