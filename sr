@@ -23,7 +23,6 @@
 require 'rdoc/usage'
 require 'fileutils'
 
-$ver = "r6"
 # Determine whether or not the device is running 2.0 (darwin9)
 # or 1.1.x (darwin8) by seeing if AppStore exists.
 if Dir.entries("/Applications").include?("AppStore.app") then
