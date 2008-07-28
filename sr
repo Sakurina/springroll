@@ -10,6 +10,50 @@ $user = ENV['USER']
 $args = ARGV
 $ver = "r5"
 
+exceptions = {
+"CurrencyConverterApp.app" => "CurrencyAppIcon.png",
+"SimpleFlashLight.app" => "flashlighticon.png",
+"Exposure.app" => "Exposure.png",
+"NYTimes.app" => "NYTApplicationIcon.png",
+"aSubnet.app" => "logo.png",
+"Reviews.app" => "IGN_57x57.png",
+"Twitterrific.app" => "Icon.png",
+"VNC.app" => [ "vnciconLITE.png", "vncicon.png", "vnciconDEMO.png"],
+"SudokuFree.app" => "SudokuFreeIcon.png",
+"AOL Radio.app" => "radio.png",
+"Flashlight.app" => "appicon.png",
+"MySpace.app" => "applicationIcon_prerendered.png",
+"WeatherBug.app" => "apple-touch-icon.png",
+"YelpIPhone_take5.app" => "yelpicon.png",
+"imaze.app" => "maze.png",
+"iMmo.app" => "Icon2.png",
+"Bubbles.app" => "BubblesIcon.png",
+"WritingPad.app" => "WritingPadlogo57X57.png",
+"Jott.app" => "jotttouch_icon.png",
+"iYardage.app" => "iyardage_icon_57x57_dc.png",
+"korebasi lite.app" => "korebasi_icon.png",
+"YPmobile.app" => "rubicon.png",
+"Mobile News.app" => "apple-touch-icon.png",
+"Rhythm.app" => "vSnax_Logo.png",
+"WordPress.app" => "application-icon.png",
+"RubyRepeat.app" => "rubyrepeat_icon.png",
+"Tanjas SOS.app" => "AppIcon.png",
+"Save Benjis.app" => "benji_face.png",
+"Barcode.app" => "Barcode.png",
+"Stanza.app" => "Icon57x57.png",
+"Eventful.app" => "eventful-icon.png",
+"eReader.app" => "app-icon.png",
+"SQLiteBooks.app" => "ToDo_57.png" }
+
+exceptions.sort.each do |app, icon|
+
+  if icon.is_a?String
+    puts "#{app}: #{icon}"
+  elsif icon.is_a?Array
+    puts "#{app}: #{icon.join(' ')}"
+  end
+end
+
 # Array of AppStore applications that have special icon names.
 $special = ["CurrencyConverterApp.app", "SimpleFlashLight.app", "Exposure.app", "NYTimes.app", "aSubnet.app", "Reviews.app", "Twitterrific.app", "VNC.app", "SudokuFree.app", "AOL Radio.app", "Flashlight.app", "MySpace.app", "WeatherBug.app", "YelpIPhone_take5.app", "imaze.app", "iMmo.app", "Bubbles.app", "WritingPad.app", "Jott.app", "iYardage.app", "korebasi lite.app", "YPmobile.app", "Mobile News.app", "Rhythm.app", "WordPress.app", "RubyRepeat.app","Tanjas SOS.app","Save Benjis.app","Barcode.app","Stanza.app","Eventful.app","eReader.app","SQLiteBooks.app"]
 
