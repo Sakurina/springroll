@@ -679,6 +679,23 @@ def theme
 			end
 		end
 	end
+	# WEBCLIP ICONS
+	puts "** Copying webclip icons:"
+	if Dir.entries("/var/mobile/Library").include?("WebClips") then
+		if File.directory?("/var/mobile/Library/WebClips") then
+			webclips = Dir.entries("/var/mobile/Library/WebClips")
+			webclips.delete(".")
+			webclips.delete("..")
+			webclips.each do |wc|
+				Dir.chdir("/var/mobile/Library/WebClips/#{wc}")
+				if File.exists?("icon.png") and File.exists?("#{SR}/#{ARGV[1]}/Icons/#{wc_name}.png") then
+					print "*** #{wc_name} ... "
+					FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{wc_name}.png", "/var/mobile/Library/WebClips/#{wc}/icon.png")
+					puts "DONE"
+				end
+			end
+		end
+	end
 	`killall SpringBoard`
 	puts "* Theming complete."
 	puts "  To restore: use 'sr restore'"
@@ -905,7 +922,7 @@ def restore
 				Dir.chdir("/var/mobile/Library/WebClips/#{wc}")
 				if File.exists?("icon.png") and File.exists?("#{SR}/Default/Icons/#{wc_name}.png") then
 					print "*** #{wc_name} ... "
-					FileUtils::cp("/var/mobile/Library/WebClips/#{wc}/icon.png","#{SR}/Default/Icons/#{wc_name}.png")
+					FileUtils::cp("#{SR}/Default/Icons/#{wc_name}.png","/var/mobile/Library/WebClips/#{wc}/icon.png")
 					puts "DONE"
 				end
 			end
