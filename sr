@@ -48,28 +48,30 @@ end
 if Dir.entries("/var/root").include?("SpringRoll") and ($ostype == "darwin9") then
 	if Dir.entries(SR).include?(".r7firstrun") then
 	else
-		puts "* SPRINGROLL R7"
-		puts "  Apparently, AppStore support is harder than I"
-		puts "  imagined, and testing all kinds of scenarios"
-		puts "  to keep things from breaking was getting"
-		puts "  troublesome. Rather than constantly breaking"
-		puts "  your apps, I've decided to disable AppStore"
-		puts "  support."
-		puts " "
-		puts "  This essentially means that r7 has the features"
-		puts "  of r4, except much faster. Crazy people who'd"
-		puts "  like to enable the broken AppStore support can"
-		puts "  by editing the APPSTORE_SUPPORT constant from"
-		puts "  false to true."
-		puts " "
-		puts "  Customize is apparently available for 2.0 now,"
-		puts "  so that's most likely going to support AppStore"
-		puts "  applications soon, and I suggest people switch"
-		puts "  to it if they want stability. Future SpringRoll"
-		puts "  updates will concentrate on user experience"
-		puts "  and bug fixes rather than AppStore support."
-		puts " "
-		puts "  I'm done wasting your time now!"
+		puts <<-doc
+* SPRINGROLL R7
+  Apparently, AppStore support is harder than I
+  imagined, and testing all kinds of scenarios
+  to keep things from breaking was getting
+  troublesome. Rather than constantly breaking
+  your apps, I've decided to disable AppStore
+  support.
+ 
+  This essentially means that r7 has the features
+  of r4, except much faster. Crazy people who'd
+  like to enable the broken AppStore support can
+  by editing the APPSTORE_SUPPORT constant from
+  false to true.
+ 
+  Customize is apparently available for 2.0 now,
+  so that's most likely going to support AppStore
+  applications soon, and I suggest people switch
+  to it if they want stability. Future SpringRoll
+  updates will concentrate on user experience
+  and bug fixes rather than AppStore support.
+ 
+  I'm done wasting your time now!
+doc
 		sleep 10
 		`touch #{SR}/.r7firstrun`
 	end
