@@ -32,14 +32,47 @@ else
 end
 $user = ENV['USER']
 $args = ARGV
-$ver = "r6"
+$ver = "r7"
+
 # Initialize constants
 SB = "/System/Library/CoreServices/SpringBoard.app"
 SR = "/var/root/SpringRoll"
+APPSTORE_SUPPORT = false
 
 case $ostype
 	when "darwin8": SLIDER_PREFIX = "/System/Library/Frameworks/TelephonyUI.framework"
 	when "darwin9": SLIDER_PREFIX = "/System/Library/PrivateFrameworks/TelephonyUI.framework"
+end
+
+# Warn users that AppStore support is now disabled
+if Dir.entries("/var/root").include?("SpringRoll") and ($ostype == "darwin9") then
+	if Dir.entries(SR).include?(".r7firstrun") then
+	else
+		puts "* SPRINGROLL R7"
+		puts "  Apparently, AppStore support is harder than I"
+		puts "  imagined, and testing all kinds of scenarios"
+		puts "  to keep things from breaking was getting"
+		puts "  troublesome. Rather than constantly breaking"
+		puts "  your apps, I've decided to disable AppStore"
+		puts "  support."
+		puts " "
+		puts "  This essentially means that r7 has the features"
+		puts "  of r4, except much faster. Crazy people who'd"
+		puts "  like to enable the broken AppStore support can"
+		puts "  by editing the APPSTORE_SUPPORT constant from"
+		puts "  false to true."
+		puts " "
+		puts "  Customize is apparently available for 2.0 now,"
+		puts "  so that's most likely going to support AppStore"
+		puts "  applications soon, and I suggest people switch"
+		puts "  to it if they want stability. Future SpringRoll"
+		puts "  updates will concentrate on user experience"
+		puts "  and bug fixes rather than AppStore support."
+		puts " "
+		puts "  I'm done wasting your time now!"
+		sleep 10
+		`touch #{SR}/.r7firstrun`
+	end
 end
 
 # Exceptions hash table courtesy of fujin
@@ -239,7 +272,7 @@ def backup
 			end
 		end
 		# APP STORE APPLICATION ICONS
-		if ($ostype == "darwin9") then
+		if ($ostype == "darwin9") and (APPSTORE_SUPPORT == true) then
 			puts "** Backing up purchased app icons:"
 			Dir.chdir('/var/mobile/Applications')
 			$apps = Dir.entries(Dir.pwd)
@@ -577,7 +610,7 @@ def theme
 		puts "** No Icons folder detected. Skipping icons."
 	end
 	# APP STORE SUPPORT BEGINS HERE!
-	if ($ostype == "darwin9") and (Dir.entries("#{SR}/#{ARGV[1]}").include?('Icons')) then
+	if ($ostype == "darwin9") and (APPSTORE_SUPPORT == true) and (Dir.entries("#{SR}/#{ARGV[1]}").include?('Icons')) then		
 		puts "** Copying purchased app icons:"
 		# Change directory to /var/mobile/Applications
 		Dir.chdir("/var/mobile/Applications")
@@ -799,7 +832,7 @@ def restore
 		end
 	end
 	# APP STORE APPLICATION ICONS
-	if ($ostype == "darwin9") then
+	if ($ostype == "darwin9") and (APPSTORE_SUPPORT == true) then
 		puts "** Restoring purchased app icons:"
 		Dir.chdir("/var/mobile/Applications")
 		$apps = Dir.entries("/var/mobile/Applications")
