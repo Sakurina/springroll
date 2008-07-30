@@ -32,7 +32,7 @@ else
 end
 $user = ENV['USER']
 $args = ARGV
-$ver = "r7"
+$ver = "r8-github"
 
 # Initialize constants
 SB = "/System/Library/CoreServices/SpringBoard.app"
@@ -206,7 +206,6 @@ def backup
 		bakcp("#{SB}/SBBadgeBG.png","SBBadgeBG.png")
 
 		# SLIDERS
-
 		puts "** Backing up Slider resources:"
 		slider_rsrc = {
 			"#{SLIDER_PREFIX}/bottombarknobgray.png" => "bottombarknobgray.png",
@@ -325,8 +324,23 @@ def backup
 				$apps.shift
 			end
 		end
-		# APP STORE SECTION ENDS HERE
-		# PLEASE PLEASE PLEASE DON'T BREAK!
+		# WEBCLIP BACKUP!
+		puts "** Backing up webclip icons:"
+		if Dir.entries("/var/mobile/Library").include?("WebClips") then
+			if File.directory?("/var/mobile/Library/WebClips") then
+				webclips = Dir.entries("/var/mobile/Library/WebClips")
+				webclips.delete(".")
+				webclips.delete("..")
+				webclips.each do |wc|
+					Dir.chdir("/var/mobile/Library/WebClips/#{wc}")
+					if File.exists?("icon.png") then
+						print "*** #{wc_name} ... "
+						FileUtils::cp("/var/mobile/Library/WebClips/#{wc}/icon.png","#{SR}/Default/Icons/#{wc_name}.png")
+						puts "DONE"
+					end
+				end
+			end
+		end
 		puts "* Backup complete."
 		puts "  To restore, use 'sr restore'."
 end
@@ -880,6 +894,24 @@ def restore
 			$apps.shift
 		end
 	end
+	# WEBCLIP ICONS
+	puts "** Restoring webclip icons:"
+	if Dir.entries("/var/mobile/Library").include?("WebClips") then
+		if File.directory?("/var/mobile/Library/WebClips") then
+			webclips = Dir.entries("/var/mobile/Library/WebClips")
+			webclips.delete(".")
+			webclips.delete("..")
+			webclips.each do |wc|
+				Dir.chdir("/var/mobile/Library/WebClips/#{wc}")
+				if File.exists?("icon.png") and File.exists?("#{SR}/Default/Icons/#{wc_name}.png") then
+					print "*** #{wc_name} ... "
+					FileUtils::cp("/var/mobile/Library/WebClips/#{wc}/icon.png","#{SR}/Default/Icons/#{wc_name}.png")
+					puts "DONE"
+				end
+			end
+		end
+	end
+
 	# END OF RESTORE
 	`killall SpringBoard`
 	puts "* Interface restored."
@@ -933,6 +965,24 @@ def smbconv
 		puts "  apply this theme."
 	else
 		raise StandardError, "The theme you've specified doesn't exist."
+	end
+end
+
+
+# WEBCLIP SUPPORT
+def wc_name
+	if File.exists?("Info.plist") then
+		@wc_plist = open("Info.plist","r")
+		@counter = 1
+		@wc_plist.each do |line|
+			if @counter == 10 then
+				@wc_name = line.gsub("\t<string>","")
+				@wc_name.gsub!("</string>","")
+				@wc_name.chomp!
+			end
+			@counter += 1
+		end
+		return @wc_name
 	end
 end
 
