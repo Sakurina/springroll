@@ -23,6 +23,11 @@
 require 'rdoc/usage'
 require 'fileutils'
 
+=begin
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!   INITIAL SETUP   !!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+=end
 # Determine whether or not the device is running 2.0 (darwin9)
 # or 1.1.x (darwin8) by seeing if AppStore exists.
 if Dir.entries("/Applications").include?("AppStore.app") then
@@ -30,11 +35,9 @@ if Dir.entries("/Applications").include?("AppStore.app") then
 else
 	$ostype = "darwin8"
 end
-$user = ENV['USER']
-$args = ARGV
-$ver = "r8-github"
 
 # Initialize constants
+VERSION = "r8-github"
 SB = "/System/Library/CoreServices/SpringBoard.app"
 SR = "/var/root/SpringRoll"
 APPSTORE_SUPPORT = false
@@ -45,11 +48,10 @@ case $ostype
 end
 
 # Warn users that AppStore support is now disabled
-if Dir.entries("/var/root").include?("SpringRoll") and ($ostype == "darwin9") then
-	if Dir.entries(SR).include?(".r7firstrun") then
-	else
+if File.exists("#{SR}/.r7firstrun") and $ostype == "darwin9" then
+else
 		puts <<-doc
-* SPRINGROLL R7
+* SPRINGROLL r7
   Apparently, AppStore support is harder than I
   imagined, and testing all kinds of scenarios
   to keep things from breaking was getting
@@ -74,9 +76,18 @@ if Dir.entries("/var/root").include?("SpringRoll") and ($ostype == "darwin9") th
 doc
 		sleep 10
 		`touch #{SR}/.r7firstrun`
-	end
 end
 
+def new
+	puts <<-new
+* WHAT'S NEW in #{VERSION}?
+  - Web clip support has been added.
+    Just name icons the name of the webclip,
+    dot png.
+new
+end
+
+# APPSTORE SUPPORT
 # Exceptions hash table courtesy of fujin
 Exceptions = {
 "CurrencyConverterApp.app" => "CurrencyAppIcon.png",
@@ -117,60 +128,233 @@ Exceptions = {
 # Array of AppStore applications that have special icon names.
 $special = ["CurrencyConverterApp.app", "SimpleFlashLight.app", "Exposure.app", "NYTimes.app", "aSubnet.app", "Reviews.app", "Twitterrific.app", "VNC.app", "SudokuFree.app", "AOL Radio.app", "Flashlight.app", "MySpace.app", "WeatherBug.app", "YelpIPhone_take5.app", "imaze.app", "iMmo.app", "Bubbles.app", "WritingPad.app", "Jott.app", "iYardage.app", "korebasi lite.app", "YPmobile.app", "Mobile News.app", "Rhythm.app", "WordPress.app", "RubyRepeat.app","Tanjas SOS.app","Save Benjis.app","Barcode.app","Stanza.app","Eventful.app","eReader.app","SQLiteBooks.app"]
 
+def patch(iconfile,f)
+	# SpringRoll Patcher
+	# First -> Patch the CodeResources
+	files_done = nil
+	supp_passed = nil
+	rsrc_file = open("CodeResources","r+")
+	rsrc_count = 1
+	# State of the process.
+	supp_passed = nil
+	first_pass = nil
+	files_done = nil
+	# For each line in the CodeResources
+	rsrc_file.each { |line|
+		if first_pass == nil then
+			if files_done == true then
+				if supp_passed.nil? then
+					if (line =~ /.supp/) and (line =~ /SC_Info/) then
+						supp_passed = true
+					end
+				end
+				if supp_passed == true then
+					if line.match "\t\t</dict>" then
+						rsrc_file.puts "\t\t<key>#{iconfile}</key>"
+						rsrc_file.puts "\t\t<dict>"
+						rsrc_file.puts "\t\t\t<key>omit</key>"
+						rsrc_file.puts "\t\t\t<true/>"
+						rsrc_file.puts "\t\t\t<key>weight</key>"
+						rsrc_file.puts "\t\t\t<integer>10000</integer>"
+						rsrc_file.puts "\t\t</dict>"
+						rsrc_file.puts "\t</dict>"
+						rsrc_file.puts "</dict>"
+						rsrc_file.puts "</plist>"
+						first_pass = true
+					end
+				end
+			end
+			if files_done.nil? then
+				if line.match "\t\t<key>#{iconfile}</key>" then
+					$icon_line = rsrc_count
+				end
+			end
+			if line.match "\t<key>rules</key>" then
+				files_done = true
+			end
+			rsrc_count += 1
+		end
+	}
+	rsrc_file.close
 
-def new
-	puts "NEW IN #{$ver}:"
-	puts "- AppStore Support!"
-	puts "- Available on Cydia thanks to the MMi repo!"
+	# First - 2nd pass
+	rsrc2_file = open("CodeResources","r+")
+	second_count = 1
+	rsrc2_file.each { |line|
+		if (second_count == ($icon_line - 1)) then
+			rsrc2_file.print "      "
+			iconfile.length.times do
+				rsrc2_file.print " "
+			end
+			rsrc2_file.puts "      "
+			rsrc2_file.puts "        "
+			rsrc2_file.puts "                             "
+			rsrc2_file.puts "          "
+		end
+		second_count += 1
+	}
+	rsrc2_file.close
+	`plutil -c xml1 CodeResources`
+	
+	# First - Last : Keep a SHA1 of the patched CodeResources in SpringRoll/AppStoreSupport
+	`touch "#{SR}/AppStoreSupport/#{f}-CodeResources"`
+	rsrc_shafile = open("#{SR}/AppStoreSupport/#{f}-CodeResources","w")
+	rsrc_sha1 = `openssl sha1 CodeResources`
+	rsrc_sha1 = rsrc_sha1.chomp
+	rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
+	rsrc_shafile.puts rsrc_sha1
+	rsrc_shafile.close
+
+	# Second -> Patch the ResourceRules.plist
+	supp2_passed = nil
+	`plutil -c xml1 ResourceRules.plist`
+	rule_complete = nil
+	rule_file = open("ResourceRules.plist","r+")
+	rule_file.each { |line|
+		if (line =~ /SC_Info/) and (line =~ /.supp/) then
+			supp2_passed = true
+		end
+		if (supp2_passed == true) then
+			if line.match("\t\t</dict>") then
+				rule_file.puts "\t\t<key>#{iconfile}</key>"
+				rule_file.puts "\t\t<dict>"
+				rule_file.puts "\t\t\t<key>omit</key>"
+				rule_file.puts "\t\t\t<true/>"
+				rule_file.puts "\t\t\t<key>weight</key>"
+				rule_file.puts "\t\t\t<integer>10000</integer>"
+				rule_file.puts "\t\t</dict>"
+				rule_file.puts "\t</dict>"
+				rule_file.puts "</dict>"
+				rule_file.puts "</plist>"
+			end	
+		end
+	}
+	rule_file.close
+	`plutil -c binary1 ResourceRules.plist`
+	`touch "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
+	rule_shafile = open("#{SR}/AppStoreSupport/#{f}-ResourceRules.plist","w")
+	rule_sha1 = `openssl sha1 ResourceRules.plist`
+	rule_sha1 = rule_sha1.chomp
+	rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
+	rule_shafile.puts rule_sha1
+	rule_shafile.close
 end
+
+def shaverify(iconname,f,basename)
+	# Verify the patch state of CodeResources and ResourceRules.plist
+	# Does CodeResources exist?
+	if Dir.entries(Dir.pwd).include?("CodeResources") then
+		@rsrc_exists = true
+	else
+		@rsrc_exists = false
+	end
+	# Does ResourceRules exist?
+	if Dir.entries(Dir.pwd).include?("ResourceRules.plist") then
+		@rule_exists = true
+	else
+		@rule_exists = false
+	end
+	# If both files exist, then...
+	if (@rsrc_exists == true) and (@rule_exists == true) then
+		# Do they both have SHA1 files?
+		if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-CodeResources") then
+			@rsrc_sha_exists = true
+		else
+			@rsrc_sha_exists = false
+		end
+
+		if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-ResourceRules.plist") then
+			@rule_sha_exists = true
+		else
+			@rule_sha_exists = false
+		end
+
+		# If so...
+		if (@rsrc_sha_exists == true) and (@rule_sha_exists == true) then
+			# Do they match to the sha of the actual file?
+			# Get the contents of the saved SHA
+			# This is a cat call because it's faster to implement and essentially has the same result.
+			@rsrc_saved_sha = `cat "#{SR}/AppStoreSupport/#{f}-CodeResources"`
+			@rsrc_saved_sha = @rsrc_saved_sha.chomp
+			@rule_saved_sha = `cat "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
+			@rule_saved_sha = @rule_saved_sha.chomp
+			# Get the real SHA
+			@rsrc_real_sha = `openssl sha1 "CodeResources"`
+			@rsrc_real_sha = @rsrc_real_sha.chomp
+			@rsrc_real_sha.gsub!("SHA1(CodeResources)= ","")
+			@rule_real_sha = `openssl sha1 "ResourceRules.plist"`
+			@rule_real_sha = @rule_real_sha.chomp
+			@rule_real_sha.gsub!("SHA1(ResourceRules.plist)= ","")
+			# If they match:
+			if (@rsrc_real_sha == @rsrc_saved_sha) and (@rule_real_sha == @rule_saved_sha) then
+				# Simply copy the icon over, no questions asked.
+				FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
+			else
+				# And if they don't, refuse to do anything with that app and give a warning.
+				puts "\n*** REGARDING #{f}:"
+				puts "    This application's CodeResources or ResourceRules.plist files"
+				puts "    have been modified by an outside source. Changing the icon"
+				puts "    could cause the application to stop functioning. Therefore,"
+				puts "    SpringRoll recommends you reinstall the applications and"
+				puts "    delete its footprint files at the following path:"
+				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources"
+				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist"
+				puts "    -> This application remains untouched."
+			end
+		else
+			# If the files don't exist, then the application is not patched!
+			patch(iconname,f)
+			FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
+		end
+	end
+end
+
+# MANUAL PREPARATION
+def manualprep
+		Dir.chdir("/var/mobile/Applications")
+		$apps = Dir.entries("/var/mobile/Applications")
+		$apps.delete "."
+		$apps.delete ".."
+		while $apps.nitems > 0:
+			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
+			Dir.entries(Dir.pwd).each do |f|
+				if f.include? ".app" then
+					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
+					puts("* Preparing manually-edited CodeResources/ResourceRules.plist footprint files.")
+					# CodeResources
+					`touch "#{SR}/AppStoreSupport/#{f}-CodeResources"`
+					rsrc_shafile = open("#{SR}/AppStoreSupport/#{f}-CodeResources","w")
+					rsrc_sha1 = `openssl sha1 CodeResources`
+					rsrc_sha1 = rsrc_sha1.chomp
+					rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
+					rsrc_shafile.puts rsrc_sha1
+					rsrc_shafile.close
+					# ResourceRules.plist
+					`plutil -c binary1 ResourceRules.plist`
+					`touch "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
+					rule_shafile = open("#{SR}/AppStoreSupport/#{f}-ResourceRules.plist","w")
+					rule_sha1 = `openssl sha1 ResourceRules.plist`
+					rule_sha1 = rule_sha1.chomp
+					rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
+					rule_shafile.puts rule_sha1
+					rule_shafile.close
+				end
+			end
+			$apps.shift
+		end
+end
+
+=begin
+!!!!!!!!!!!!!!!!!!!!
+!!!!   BACKUP   !!!!
+!!!!!!!!!!!!!!!!!!!!
+=end
 
 def bakcp(full,base)
 	print "*** #{base} ... "
 	FileUtils::cp(full,"#{SR}/Default/#{base}")
 	print "DONE \n"
 end
-
-# NEW FROM SRA
-def t_specialcases(f,basename)
-	theme_special(f,basename,"CurrencyConverterApp.app","CurrencyAppIcon.png")
-	theme_special(f,basename,"SimpleFlashLight.app","flashlighticon.png")
-	theme_special(f,basename,"Exposure.app","Exposure.png")
-	theme_special(f,basename,"NYTimes.app","NYTApplicationIcon.png")
-	theme_special(f,basename,"aSubnet.app","logo.png")
-	theme_special(f,basename,"Reviews.app","IGN_57x57.png")
-	theme_special(f,basename,"Twitterrific.app","Icon.png")
-	theme_special(f,basename,"Twitterrific.app","Icon_free.png")
-	theme_special(f,basename,"VNC.app","vnciconLITE.png")
-	theme_special(f,basename,"VNC.app","vncicon.png")
-	theme_special(f,basename,"VNC.app","vnciconDEMO.png")
-	theme_special(f,basename,"SudokuFree.app","SudokuFreeIcon.png")
-	theme_special(f,basename,"AOL Radio.app","radio.png")
-	theme_special(f,basename,"Flashlight.app","appicon.png")
-	theme_special(f,basename,"MySpace.app","applicationIcon_prerendered.png")
-	theme_special(f,basename,"WeatherBug.app","apple-touch-icon.png")
-	theme_special(f,basename,"YelpIPhone_take5.app","yelpicon.png")
-	theme_special(f,basename,"imaze.app","maze.png")
-	theme_special(f,basename,"iMmo.app","Icon2.png")
-	theme_special(f,basename,"Bubbles.app","BubblesIcon.png")
-	theme_special(f,basename,"WritingPad.app","WritingPadlogo57X57.png")
-	theme_special(f,basename,"Jott.app","jotttouch_icon.png")
-	theme_special(f,basename,"iYardage.app","iyardage_icon_57x57_dc.png")
-	theme_special(f,basename,"korebasi lite.app","korebasi_icon.png")
-	theme_special(f,basename,"YPmobile.app","rubicon.png")
-	theme_special(f,basename,"Mobile News.app","apple-touch-icon.png")
-	theme_special(f,basename,"Rhythm.app","vSnax_Logo.png")
-	theme_special(f,basename,"WordPress.app","application-icon.png")
-	theme_special(f,basename,"RubyRepeat.app","rubyrepeat_icon.png")
-	theme_special(f,basename,"Tanjas SOS.app","AppIcon.png")
-	theme_special(f,basename,"Save Benjis.app","benji_face.png")
-	theme_special(f,basename,"Barcode.app","Barcode.png")
-	theme_special(f,basename,"Stanza.app","Icon57x57.png")
-	theme_special(f,basename,"Eventful.app","eventful-icon.png")
-	theme_special(f,basename,"eReader.app","app-icon.png")
-	theme_special(f,basename,"SQLiteBooks.app","ToDo_57.png")
-end
-
-# END NEW FROM SRA
 
 def backup
 	# Back up icons, dock, badge, slider resources to the Default theme
@@ -326,7 +510,7 @@ def backup
 				$apps.shift
 			end
 		end
-		# WEBCLIP BACKUP!
+		# WEBCLIP ICONS
 		puts "** Backing up webclip icons:"
 		if Dir.entries("/var/mobile/Library").include?("WebClips") then
 			if File.directory?("/var/mobile/Library/WebClips") then
@@ -347,118 +531,11 @@ def backup
 		puts "  To restore, use 'sr restore'."
 end
 
-def patch(iconfile,f)
-	# SpringRoll Patcher
-	# First -> Patch the CodeResources
-	files_done = nil
-	supp_passed = nil
-	rsrc_file = open("CodeResources","r+")
-	rsrc_count = 1
-	# State of the process.
-	supp_passed = nil
-	first_pass = nil
-	files_done = nil
-	# For each line in the CodeResources
-	rsrc_file.each { |line|
-		if first_pass == nil then
-			if files_done == true then
-				if supp_passed.nil? then
-					if (line =~ /.supp/) and (line =~ /SC_Info/) then
-						supp_passed = true
-					end
-				end
-				if supp_passed == true then
-					if line.match "\t\t</dict>" then
-						rsrc_file.puts "\t\t<key>#{iconfile}</key>"
-						rsrc_file.puts "\t\t<dict>"
-						rsrc_file.puts "\t\t\t<key>omit</key>"
-						rsrc_file.puts "\t\t\t<true/>"
-						rsrc_file.puts "\t\t\t<key>weight</key>"
-						rsrc_file.puts "\t\t\t<integer>10000</integer>"
-						rsrc_file.puts "\t\t</dict>"
-						rsrc_file.puts "\t</dict>"
-						rsrc_file.puts "</dict>"
-						rsrc_file.puts "</plist>"
-						first_pass = true
-					end
-				end
-			end
-			if files_done.nil? then
-				if line.match "\t\t<key>#{iconfile}</key>" then
-					$icon_line = rsrc_count
-				end
-			end
-			if line.match "\t<key>rules</key>" then
-				files_done = true
-			end
-			rsrc_count += 1
-		end
-	}
-	rsrc_file.close
-
-	# First - 2nd pass
-	rsrc2_file = open("CodeResources","r+")
-	second_count = 1
-	rsrc2_file.each { |line|
-		if (second_count == ($icon_line - 1)) then
-			rsrc2_file.print "      "
-			iconfile.length.times do
-				rsrc2_file.print " "
-			end
-			rsrc2_file.puts "      "
-			rsrc2_file.puts "        "
-			rsrc2_file.puts "                             "
-			rsrc2_file.puts "          "
-		end
-		second_count += 1
-	}
-	rsrc2_file.close
-	`plutil -c xml1 CodeResources`
-	
-	# First - Last : Keep a SHA1 of the patched CodeResources in SpringRoll/AppStoreSupport
-	`touch "#{SR}/AppStoreSupport/#{f}-CodeResources"`
-	rsrc_shafile = open("#{SR}/AppStoreSupport/#{f}-CodeResources","w")
-	rsrc_sha1 = `openssl sha1 CodeResources`
-	rsrc_sha1 = rsrc_sha1.chomp
-	rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
-	rsrc_shafile.puts rsrc_sha1
-	rsrc_shafile.close
-
-	# Second -> Patch the ResourceRules.plist
-	supp2_passed = nil
-	`plutil -c xml1 ResourceRules.plist`
-	rule_complete = nil
-	rule_file = open("ResourceRules.plist","r+")
-	rule_file.each { |line|
-		if (line =~ /SC_Info/) and (line =~ /.supp/) then
-			supp2_passed = true
-		end
-		if (supp2_passed == true) then
-			if line.match("\t\t</dict>") then
-				rule_file.puts "\t\t<key>#{iconfile}</key>"
-				rule_file.puts "\t\t<dict>"
-				rule_file.puts "\t\t\t<key>omit</key>"
-				rule_file.puts "\t\t\t<true/>"
-				rule_file.puts "\t\t\t<key>weight</key>"
-				rule_file.puts "\t\t\t<integer>10000</integer>"
-				rule_file.puts "\t\t</dict>"
-				rule_file.puts "\t</dict>"
-				rule_file.puts "</dict>"
-				rule_file.puts "</plist>"
-			end	
-		end
-	}
-	rule_file.close
-	`plutil -c binary1 ResourceRules.plist`
-	`touch "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
-	rule_shafile = open("#{SR}/AppStoreSupport/#{f}-ResourceRules.plist","w")
-	rule_sha1 = `openssl sha1 ResourceRules.plist`
-	rule_sha1 = rule_sha1.chomp
-	rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
-	rule_shafile.puts rule_sha1
-	rule_shafile.close
-end
-
+=begin
+!!!!!!!!!!!!!!!!!!!
+!!!!   THEME   !!!!
+!!!!!!!!!!!!!!!!!!!
+=end
 def thcp(base, full)
 	if Dir.entries(Dir.pwd).include?(base) then
 		print "*** #{base} ... "
@@ -704,77 +781,11 @@ def theme
 	puts "  Device will respring shortly."
 end
 
-def shaverify(iconname,f,basename)
-	# Verify the patch state of CodeResources and ResourceRules.plist
-	# Does CodeResources exist?
-	if Dir.entries(Dir.pwd).include?("CodeResources") then
-		@rsrc_exists = true
-	else
-		@rsrc_exists = false
-	end
-	# Does ResourceRules exist?
-	if Dir.entries(Dir.pwd).include?("ResourceRules.plist") then
-		@rule_exists = true
-	else
-		@rule_exists = false
-	end
-	# If both files exist, then...
-	if (@rsrc_exists == true) and (@rule_exists == true) then
-		# Do they both have SHA1 files?
-		if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-CodeResources") then
-			@rsrc_sha_exists = true
-		else
-			@rsrc_sha_exists = false
-		end
-
-		if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-ResourceRules.plist") then
-			@rule_sha_exists = true
-		else
-			@rule_sha_exists = false
-		end
-
-		# If so...
-		if (@rsrc_sha_exists == true) and (@rule_sha_exists == true) then
-			# Do they match to the sha of the actual file?
-			# Get the contents of the saved SHA
-			# This is a cat call because it's faster to implement and essentially has the same result.
-			@rsrc_saved_sha = `cat "#{SR}/AppStoreSupport/#{f}-CodeResources"`
-			@rsrc_saved_sha = @rsrc_saved_sha.chomp
-			@rule_saved_sha = `cat "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
-			@rule_saved_sha = @rule_saved_sha.chomp
-			# Get the real SHA
-			@rsrc_real_sha = `openssl sha1 "CodeResources"`
-			@rsrc_real_sha = @rsrc_real_sha.chomp
-			@rsrc_real_sha.gsub!("SHA1(CodeResources)= ","")
-			@rule_real_sha = `openssl sha1 "ResourceRules.plist"`
-			@rule_real_sha = @rule_real_sha.chomp
-			@rule_real_sha.gsub!("SHA1(ResourceRules.plist)= ","")
-			# If they match:
-			if (@rsrc_real_sha == @rsrc_saved_sha) and (@rule_real_sha == @rule_saved_sha) then
-				# Simply copy the icon over, no questions asked.
-				FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
-			else
-				# And if they don't, refuse to do anything with that app and give a warning.
-				puts "\n*** REGARDING #{f}:"
-				puts "    This application's CodeResources or ResourceRules.plist files"
-				puts "    have been modified by an outside source. Changing the icon"
-				puts "    could cause the application to stop functioning. Therefore,"
-				puts "    SpringRoll recommends you reinstall the applications and"
-				puts "    delete its footprint files at the following path:"
-				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources"
-				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist"
-				puts "    -> This application remains untouched."
-			end
-		else
-			# If the files don't exist, then the application is not patched!
-			patch(iconname,f)
-			FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
-		end
-	end
-
-
-end
-
+=begin
+!!!!!!!!!!!!!!!!!!!!!
+!!!!   RESTORE   !!!!
+!!!!!!!!!!!!!!!!!!!!!
+=end
 
 def restcp(base, full)
 	print "*** #{base} ... "
@@ -937,7 +948,12 @@ def restore
 	puts "  Device will respring shortly."
 end
 
-# SUMMERBOARD SUPPORT
+=begin
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!   SUMMERBOARD SUPPORT   !!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+=end
+
 def smbmv(old,new)
 	if Dir.entries(Dir.pwd).include?(old) then
 		print "** #{old} -> #{new} ... "
@@ -987,8 +1003,12 @@ def smbconv
 	end
 end
 
+=begin
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!   WEBCLIP SUPPORT   !!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+=end
 
-# WEBCLIP SUPPORT
 def wc_name
 	if File.exists?("Info.plist") then
 		@wc_plist = open("Info.plist","r")
@@ -1005,46 +1025,11 @@ def wc_name
 	end
 end
 
-# MANUAL PREPARATION
-def manualprep
-		Dir.chdir("/var/mobile/Applications")
-		$apps = Dir.entries("/var/mobile/Applications")
-		$apps.delete "."
-		$apps.delete ".."
-		while $apps.nitems > 0:
-			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
-			Dir.entries(Dir.pwd).each do |f|
-				if f.include? ".app" then
-					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
-					puts("* Preparing manually-edited CodeResources/ResourceRules.plist footprint files.")
-					# CodeResources
-					`touch "#{SR}/AppStoreSupport/#{f}-CodeResources"`
-					rsrc_shafile = open("#{SR}/AppStoreSupport/#{f}-CodeResources","w")
-					rsrc_sha1 = `openssl sha1 CodeResources`
-					rsrc_sha1 = rsrc_sha1.chomp
-					rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
-					rsrc_shafile.puts rsrc_sha1
-					rsrc_shafile.close
-					# ResourceRules.plist
-					`plutil -c binary1 ResourceRules.plist`
-					`touch "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
-					rule_shafile = open("#{SR}/AppStoreSupport/#{f}-ResourceRules.plist","w")
-					rule_sha1 = `openssl sha1 ResourceRules.plist`
-					rule_sha1 = rule_sha1.chomp
-					rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
-					rule_shafile.puts rule_sha1
-					rule_shafile.close
-				end
-			end
-			$apps.shift
-		end
-end
-
 # ARGUMENT PROCESSING
 # To be phased out with GetoptLong in the future.
 def proceed(action)
 	# Verify to see if user is root.
-	if $user != 'root' then
+	if ENV['USER'] != 'root' then
 		raise StandardError, "You must run this as root!"
 	end
 	# Dispatch orders.
