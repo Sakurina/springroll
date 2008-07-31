@@ -50,11 +50,10 @@ end
 # APPSTORE_IN_NORMALAPPS: Allows exception checking in normal
 # /Applications directory, for people who've moved their apps
 # there.
-if $ostype == "darwin9" then
-	case File.exists?("#{SR}/.appstore_in_normalapps")
-		when true: APPSTORE_IN_NORMALAPPS = true
-		when false: APPSTORE_IN_NORMALAPPS = false
-	end
+if $ostype == "darwin9" and File.exists?("#{SR}/.appstore_in_normalapps") then
+	APPSTORE_IN_NORMALAPPS = true
+else
+	APPSTORE_IN_NORMALAPPS = false
 end
 
 # What's new text
@@ -259,7 +258,7 @@ def backup
 						end
 					else
 	                        		print "*** #{$apps[0]} - icon.png ... "
-						if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?(basename) then
+						if File.exists?("icon.png") then
                                 			FileUtils::cp("/Applications/#{$apps[0]}/icon.png","#{SR}/Default/Icons/#{basename}")
                                 			puts "DONE"
                         			else
@@ -636,7 +635,7 @@ def restore
 					end
 				else
 	                        	print "*** #{$apps[0]} - icon.png ... "
-					if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?(basename) then
+					if Dir.entries("#{SR}/Default/Icons").include?(basename) then
                                 		FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
                                 		puts "DONE"
                         		else
