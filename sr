@@ -76,36 +76,29 @@ end
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 =end
 # Warn users that AppStore support is now disabled
-if File.exists?("#{SR}/.r7firstrun") then
+if File.exists?("#{SR}/.r8firstrun") then
 else
 	if $ostype == "darwin9" then
 		puts <<-doc
-* SPRINGROLL r7 AND LATER!
-  Apparently, AppStore support is harder than I
-  imagined, and testing all kinds of scenarios
-  to keep things from breaking was getting
-  troublesome. Rather than constantly breaking
-  your apps, I've decided to disable AppStore
-  support.
+* SPRINGROLL r8 AND LATER!
+  Apparently, using this nag message to give
+  you all important messages is working. Good.
  
-  This essentially means that r7 has the features
-  of r4, except much faster. Crazy people who'd
-  like to enable the broken AppStore support can
-  by editing the APPSTORE_SUPPORT constant from
-  false to true.
+  This release removes AppStore support entirely
+  and rather gives preliminary support for
+  AppStore applications copied to /Applications.
  
-  Customize is apparently available for 2.0 now,
-  so that's most likely going to support AppStore
-  applications soon, and I suggest people switch
-  to it if they want stability. Future SpringRoll
-  updates will concentrate on user experience
-  and bug fixes rather than AppStore support.
- 
-  I'm done wasting your time now!
+  Much like the previous AppStore support, this
+  is a preference. If you want to turn it on,
+  you'll have to run the following command:
+  touch /var/root/SpringRoll/.appstore_in_normalapps
+  
+  If you don't know how to do this, then I suggest
+  you stay away from it.
 doc
 		sleep 10
 	end
-	`touch #{SR}/.r7firstrun`
+	`touch #{SR}/.r8firstrun`
 end
 
 # Exceptions hash table courtesy of fujin
@@ -143,226 +136,6 @@ Exceptions = {
 "Eventful.app" => "eventful-icon.png",
 "eReader.app" => "app-icon.png",
 "SQLiteBooks.app" => "ToDo_57.png" }
-
-# TO BE REPLACED BY VASTLY SUPERIOR EXCEPTIONS HASH TABLE:
-# Array of AppStore applications that have special icon names.
-$special = ["CurrencyConverterApp.app", "SimpleFlashLight.app", "Exposure.app", "NYTimes.app", "aSubnet.app", "Reviews.app", "Twitterrific.app", "VNC.app", "SudokuFree.app", "AOL Radio.app", "Flashlight.app", "MySpace.app", "WeatherBug.app", "YelpIPhone_take5.app", "imaze.app", "iMmo.app", "Bubbles.app", "WritingPad.app", "Jott.app", "iYardage.app", "korebasi lite.app", "YPmobile.app", "Mobile News.app", "Rhythm.app", "WordPress.app", "RubyRepeat.app","Tanjas SOS.app","Save Benjis.app","Barcode.app","Stanza.app","Eventful.app","eReader.app","SQLiteBooks.app"]
-
-def patch(iconfile,f)
-	# SpringRoll Patcher
-	# First -> Patch the CodeResources
-	files_done = nil
-	supp_passed = nil
-	rsrc_file = open("CodeResources","r+")
-	rsrc_count = 1
-	# State of the process.
-	supp_passed = nil
-	first_pass = nil
-	files_done = nil
-	# For each line in the CodeResources
-	rsrc_file.each { |line|
-		if first_pass == nil then
-			if files_done == true then
-				if supp_passed.nil? then
-					if (line =~ /.supp/) and (line =~ /SC_Info/) then
-						supp_passed = true
-					end
-				end
-				if supp_passed == true then
-					if line.match "\t\t</dict>" then
-						rsrc_file.puts "\t\t<key>#{iconfile}</key>"
-						rsrc_file.puts "\t\t<dict>"
-						rsrc_file.puts "\t\t\t<key>omit</key>"
-						rsrc_file.puts "\t\t\t<true/>"
-						rsrc_file.puts "\t\t\t<key>weight</key>"
-						rsrc_file.puts "\t\t\t<integer>10000</integer>"
-						rsrc_file.puts "\t\t</dict>"
-						rsrc_file.puts "\t</dict>"
-						rsrc_file.puts "</dict>"
-						rsrc_file.puts "</plist>"
-						first_pass = true
-					end
-				end
-			end
-			if files_done.nil? then
-				if line.match "\t\t<key>#{iconfile}</key>" then
-					$icon_line = rsrc_count
-				end
-			end
-			if line.match "\t<key>rules</key>" then
-				files_done = true
-			end
-			rsrc_count += 1
-		end
-	}
-	rsrc_file.close
-
-	# First - 2nd pass
-	rsrc2_file = open("CodeResources","r+")
-	second_count = 1
-	rsrc2_file.each { |line|
-		if (second_count == ($icon_line - 1)) then
-			rsrc2_file.print "      "
-			iconfile.length.times do
-				rsrc2_file.print " "
-			end
-			rsrc2_file.puts "      "
-			rsrc2_file.puts "        "
-			rsrc2_file.puts "                             "
-			rsrc2_file.puts "          "
-		end
-		second_count += 1
-	}
-	rsrc2_file.close
-	`plutil -c xml1 CodeResources`
-	
-	# First - Last : Keep a SHA1 of the patched CodeResources in SpringRoll/AppStoreSupport
-	`touch "#{SR}/AppStoreSupport/#{f}-CodeResources"`
-	rsrc_shafile = open("#{SR}/AppStoreSupport/#{f}-CodeResources","w")
-	rsrc_sha1 = `openssl sha1 CodeResources`
-	rsrc_sha1 = rsrc_sha1.chomp
-	rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
-	rsrc_shafile.puts rsrc_sha1
-	rsrc_shafile.close
-
-	# Second -> Patch the ResourceRules.plist
-	supp2_passed = nil
-	`plutil -c xml1 ResourceRules.plist`
-	rule_complete = nil
-	rule_file = open("ResourceRules.plist","r+")
-	rule_file.each { |line|
-		if (line =~ /SC_Info/) and (line =~ /.supp/) then
-			supp2_passed = true
-		end
-		if (supp2_passed == true) then
-			if line.match("\t\t</dict>") then
-				rule_file.puts "\t\t<key>#{iconfile}</key>"
-				rule_file.puts "\t\t<dict>"
-				rule_file.puts "\t\t\t<key>omit</key>"
-				rule_file.puts "\t\t\t<true/>"
-				rule_file.puts "\t\t\t<key>weight</key>"
-				rule_file.puts "\t\t\t<integer>10000</integer>"
-				rule_file.puts "\t\t</dict>"
-				rule_file.puts "\t</dict>"
-				rule_file.puts "</dict>"
-				rule_file.puts "</plist>"
-			end	
-		end
-	}
-	rule_file.close
-	`plutil -c binary1 ResourceRules.plist`
-	`touch "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
-	rule_shafile = open("#{SR}/AppStoreSupport/#{f}-ResourceRules.plist","w")
-	rule_sha1 = `openssl sha1 ResourceRules.plist`
-	rule_sha1 = rule_sha1.chomp
-	rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
-	rule_shafile.puts rule_sha1
-	rule_shafile.close
-end
-
-def shaverify(iconname,f,basename)
-	# Verify the patch state of CodeResources and ResourceRules.plist
-	# Does CodeResources exist?
-	if Dir.entries(Dir.pwd).include?("CodeResources") then
-		@rsrc_exists = true
-	else
-		@rsrc_exists = false
-	end
-	# Does ResourceRules exist?
-	if Dir.entries(Dir.pwd).include?("ResourceRules.plist") then
-		@rule_exists = true
-	else
-		@rule_exists = false
-	end
-	# If both files exist, then...
-	if (@rsrc_exists == true) and (@rule_exists == true) then
-		# Do they both have SHA1 files?
-		if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-CodeResources") then
-			@rsrc_sha_exists = true
-		else
-			@rsrc_sha_exists = false
-		end
-
-		if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-ResourceRules.plist") then
-			@rule_sha_exists = true
-		else
-			@rule_sha_exists = false
-		end
-
-		# If so...
-		if (@rsrc_sha_exists == true) and (@rule_sha_exists == true) then
-			# Do they match to the sha of the actual file?
-			# Get the contents of the saved SHA
-			# This is a cat call because it's faster to implement and essentially has the same result.
-			@rsrc_saved_sha = `cat "#{SR}/AppStoreSupport/#{f}-CodeResources"`
-			@rsrc_saved_sha = @rsrc_saved_sha.chomp
-			@rule_saved_sha = `cat "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
-			@rule_saved_sha = @rule_saved_sha.chomp
-			# Get the real SHA
-			@rsrc_real_sha = `openssl sha1 "CodeResources"`
-			@rsrc_real_sha = @rsrc_real_sha.chomp
-			@rsrc_real_sha.gsub!("SHA1(CodeResources)= ","")
-			@rule_real_sha = `openssl sha1 "ResourceRules.plist"`
-			@rule_real_sha = @rule_real_sha.chomp
-			@rule_real_sha.gsub!("SHA1(ResourceRules.plist)= ","")
-			# If they match:
-			if (@rsrc_real_sha == @rsrc_saved_sha) and (@rule_real_sha == @rule_saved_sha) then
-				# Simply copy the icon over, no questions asked.
-				FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
-			else
-				# And if they don't, refuse to do anything with that app and give a warning.
-				puts "\n*** REGARDING #{f}:"
-				puts "    This application's CodeResources or ResourceRules.plist files"
-				puts "    have been modified by an outside source. Changing the icon"
-				puts "    could cause the application to stop functioning. Therefore,"
-				puts "    SpringRoll recommends you reinstall the applications and"
-				puts "    delete its footprint files at the following path:"
-				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-CodeResources"
-				puts "    /var/root/SpringRoll/AppStoreSupport/#{f}-ResourceRules.plist"
-				puts "    -> This application remains untouched."
-			end
-		else
-			# If the files don't exist, then the application is not patched!
-			patch(iconname,f)
-			FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/var/mobile/Applications/#{$apps[0]}/#{f}/#{iconname}")
-		end
-	end
-end
-
-# MANUAL PREPARATION
-def manualprep
-		Dir.chdir("/var/mobile/Applications")
-		$apps = Dir.entries("/var/mobile/Applications")
-		$apps.delete "."
-		$apps.delete ".."
-		while $apps.nitems > 0:
-			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
-			Dir.entries(Dir.pwd).each do |f|
-				if f.include? ".app" then
-					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
-					puts("* Preparing manually-edited CodeResources/ResourceRules.plist footprint files.")
-					# CodeResources
-					`touch "#{SR}/AppStoreSupport/#{f}-CodeResources"`
-					rsrc_shafile = open("#{SR}/AppStoreSupport/#{f}-CodeResources","w")
-					rsrc_sha1 = `openssl sha1 CodeResources`
-					rsrc_sha1 = rsrc_sha1.chomp
-					rsrc_sha1.gsub!("SHA1(CodeResources)= ","")
-					rsrc_shafile.puts rsrc_sha1
-					rsrc_shafile.close
-					# ResourceRules.plist
-					`plutil -c binary1 ResourceRules.plist`
-					`touch "#{SR}/AppStoreSupport/#{f}-ResourceRules.plist"`
-					rule_shafile = open("#{SR}/AppStoreSupport/#{f}-ResourceRules.plist","w")
-					rule_sha1 = `openssl sha1 ResourceRules.plist`
-					rule_sha1 = rule_sha1.chomp
-					rule_sha1 = rule_sha1.gsub!("SHA1(ResourceRules.plist)= ","")
-					rule_shafile.puts rule_sha1
-					rule_shafile.close
-				end
-			end
-			$apps.shift
-		end
-end
 
 =begin
 !!!!!!!!!!!!!!!!!!!!
@@ -447,86 +220,60 @@ def backup
 		while $apps.nitems > 0:
 			if File.directory?("/Applications/#{$apps[0]}") then
 				Dir.chdir("/Applications/#{$apps[0]}")
-				def mobilemusicplayer
+				def b_mobilemusicplayer
 					bakcp('/Applications/MobileMusicPlayer.app/icon-AudioPlayer.png','Icons/MobileMusicPlayer-AudioPlayer.png')
 					bakcp('/Applications/MobileMusicPlayer.app/icon-MediaPlayer.png','Icons/MobileMusicPlayer-MediaPlayer.png')
 					bakcp('/Applications/MobileMusicPlayer.app/icon-VideoPlayer.png','Icons/MobileMusicPlayer-VideoPlayer.png')
 				end
-				def mobileslideshow
+				def b_mobileslideshow
 					bakcp('/Applications/MobileSlideShow.app/icon-Camera.png', 'Icons/MobileSlideShow-Camera.png')
 					bakcp('/Applications/MobileSlideShow.app/icon-Photos.png', 'Icons/MobileSlideShow-Photos.png')
 				end
-				def normalicon
-					print "*** #{$apps[0]} - icon.png ... "
+				def b_others
 					basename = $apps[0].gsub('.app','.png')
-					case Dir.entries(Dir.pwd).include?('icon.png')
-						when true
-							FileUtils::cp("/Applications/#{$apps[0]}/icon.png","#{SR}/Default/Icons/#{basename}")
-							puts "DONE"
-						when false: puts "NOT FOUND!"
+					if APPSTORE_IN_NORMALAPPS == true
+						# Is the running app an exception?
+						if Exceptions.has_key?($apps[0]) then
+							target = Exceptions.fetch($apps[0])
+							if target.is_a?String
+								print "*** #{$apps[0]} - #{target} ... "
+								FileUtils::cp("/Applications/#{$apps[0]}/#{target}","#{SR}/Default/Icons/#{basename}")
+								puts "DONE"
+							elsif target.is_a?Array
+								target.each do |file|
+									print "*** #{$apps[0]} - #{file} ... "
+									FileUtils::cp("/Applications/#{$apps[0]}/#{file}","#{SR}/Default/Icons/#{basename}")
+									puts "DONE"
+								end
+							end
+						else
+							if File.exists?("icon.png") then
+								print "*** #{$apps[0]} - icon.png ... "
+								FileUtils::cp("/Applications/#{$apps[0]}/icon.png","#{SR}/Default/Icons/#{basename}")
+								puts "DONE"
+							elsif File.exists?("Icon.png") then
+								print "*** #{$apps[0]} - Icon.png ... "
+								FileUtils::cp("/Applications/#{$apps[0]}/Icon.png","#{SR}/Default/Icons/#{basename}")
+								puts "DONE"
+							end
+						end
+					else
+	                        		print "*** #{$apps[0]} - icon.png ... "
+						if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?(basename) then
+                                			FileUtils::cp("/Applications/#{$apps[0]}/icon.png","#{SR}/Default/Icons/#{basename}")
+                                			puts "DONE"
+                        			else
+                                			puts "NOT FOUND!"
+                        			end
 					end
 				end
 				case $apps[0]
-					when 'MobileMusicPlayer.app': mobilemusicplayer
-					when 'MobileSlideShow.app': mobileslideshow
-					else normalicon
+					when 'MobileMusicPlayer.app': b_mobilemusicplayer
+					when 'MobileSlideShow.app': b_mobileslideshow
+					else b_others
 				end
 				$apps.shift
 			else
-				$apps.shift
-			end
-		end
-		# APP STORE APPLICATION ICONS
-		if ($ostype == "darwin9") and (APPSTORE_SUPPORT == true) then
-			puts "** Backing up purchased app icons:"
-			Dir.chdir('/var/mobile/Applications')
-			$apps = Dir.entries(Dir.pwd)
-			$apps.delete('.')
-			$apps.delete('..')
-			while $apps.nitems > 0 do
-				Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
-				Dir.entries(Dir.pwd).each do |f|
-					if f.include? ".app" then
-						Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
-						basename = f.gsub('.app','.png')
-						if Exceptions.has_key?(f) then
-							icon = Exceptions.fetch(f)
-							if icon.is_a?String
-								# Process it once!
-								if Dir.entries(Dir.pwd).include?(icon) then
-									print "*** #{f} - #{icon} ... "
-									FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{icon}", "#{SR}/Default/Icons/#{basename}")
-									puts "DONE"
-								end
-							elsif icon.is_a?Array
-								# Process each element!
-								icon.each do |file|
-									if Dir.entries(Dir.pwd).include?(file) then
-										print "*** #{f} - #{file} ... "
-										FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/#{file}", "#{SR}/Default/Icons/#{basename}")
-										puts "DONE"
-									end
-								end
-							end
-						else
-							if Dir.entries(Dir.pwd).include?("icon.png") then
-								print "*** #{f} - icon.png ... "
-								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png","#{SR}/Default/Icons/#{basename}")
-								print "DONE \n"
-							elsif Dir.entries(Dir.pwd).include?("Icon.png") then
-								print "*** #{f} - Icon.png ... "
-								FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png","#{SR}/Default/Icons/#{basename}")
-								print "DONE \n"
-							end
-						end
-						if Dir.entries(SR).include?("AppStoreSupport") then
-							FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist","#{SR}/AppStoreSupport/#{f}-Info.plist")
-						else
-							Dir.mkdir("#{SR}/AppStoreSupport")
-							FileUtils::cp("/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist","#{SR}/AppStoreSupport/#{f}-Info.plist")
-						end
-					end
-				end
 				$apps.shift
 			end
 		end
@@ -762,62 +509,6 @@ def theme
 	else
 		puts "** No Icons folder detected. Skipping icons."
 	end
-	# APP STORE SUPPORT BEGINS HERE!
-	if ($ostype == "darwin9") and (APPSTORE_SUPPORT == true) and (Dir.entries("#{SR}/#{ARGV[1]}").include?('Icons')) then		
-		puts "** Copying purchased app icons:"
-		# Change directory to /var/mobile/Applications
-		Dir.chdir("/var/mobile/Applications")
-		$apps = Dir.entries("/var/mobile/Applications")
-		# Remove the self-referential/back entries
-		$apps.delete "."
-		$apps.delete ".."
-		# While there are still apps to process:
-		while $apps.nitems > 0:
-			# And if the app is really an app (directory)
-			if File.directory?("/var/mobile/Applications/#{$apps[0]}") then
-				# Change to its directory
-				Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
-				# For each file...
-				Dir.entries(Dir.pwd).each do |f|
-					# If one is an app...
-					if f.include? ".app" then
-						# Enter it.
-						Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
-						# Set a basename.
-						basename = f.gsub('.app','.png')
-						# If the theme has an icon for this app then:
-						if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}/Icons").include?(basename) then
-							# If it's an exception, run t_specialcases
-							if $special.include?(f) then
-								t_specialcases(f,basename)
-							else
-								# If it's normal, process its icon.png or Icon.png
-								if Dir.entries(Dir.pwd).include?("icon.png") then
-									print "*** #{f} - icon.png ... "
-									shaverify("icon.png",f,basename)
-									print "DONE \n"
-								end
-								if Dir.entries(Dir.pwd).include?("Icon.png") then
-									print "*** #{f} - Icon.png ... "
-									shaverify("Icon.png",f,basename)		
-									print "DONE \n"
-								end
-							end
-							# Change its gloss setting only if the app has an icon
-							`plutil -c xml1 Info.plist`
-							`plutil -1 UIPrerenderedIcon Info.plist`
-							`plutil -c binary1 Info.plist`
-						end
-					end
-				end
-				# Move onto the next entry
-				$apps.shift
-			else
-				# If it isn't an app... then go to the next entry
-				$apps.shift
-			end
-		end
-	end
 	# WEBCLIP ICONS
 	puts "** Copying webclip icons:"
 	if Dir.entries("/var/mobile/Library").include?("WebClips") then
@@ -898,7 +589,7 @@ def restore
 	while $apps.nitems > 0:
 		if File.directory?("/Applications/#{$apps[0]}") then
 			Dir.chdir("/Applications/#{$apps[0]}")
-			def rmobilemusicplayer
+			def r_mobilemusicplayer
 				mmp_rsrc = {
 					"Icons/MobileMusicPlayer-AudioPlayer.png" => "#{Dir.pwd}/icon-AudioPlayer.png",
 					"Icons/MobileMusicPlayer-MediaPlayer.png" => "#{Dir.pwd}/icon-MediaPlayer.png",
@@ -907,7 +598,7 @@ def restore
 					restcp(src,dest)
 				end
 			end
-			def rmobileslideshow
+			def r_mobileslideshow
 				mss_rsrc = {
 					"Icons/MobileSlideShow-Camera.png", "#{Dir.pwd}/icon-Camera.png",
 					"Icons/MobileSlideShow-Photos.png", "#{Dir.pwd}/icon-Photos.png" }
@@ -915,72 +606,51 @@ def restore
 					restcp(src,dest)
 				end
 			end
-			def rnormalicon
-				print "*** #{$apps[0]} - icon.png ... "
+			def r_others
 				basename = $apps[0].gsub('.app','.png')
-				if Dir.entries("#{SR}/Default/Icons").include?(basename) then
-					FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
-					puts "DONE"
-				else
-					puts "NOT FOUND!"
-				end
-			end
-			case $apps[0]
-				when 'MobileMusicPlayer.app': rmobilemusicplayer
-				when 'MobileSlideShow.app': rmobileslideshow
-				else rnormalicon
-			end
-			$apps.shift
-		else
-			$apps.shift
-		end
-	end
-	# APP STORE APPLICATION ICONS
-	if ($ostype == "darwin9") and (APPSTORE_SUPPORT == true) then
-		puts "** Restoring purchased app icons:"
-		Dir.chdir("/var/mobile/Applications")
-		$apps = Dir.entries("/var/mobile/Applications")
-		$apps.delete "."
-		$apps.delete ".."
-		while $apps.nitems > 0:
-			Dir.chdir("/var/mobile/Applications/#{$apps[0]}")
-			Dir.entries(Dir.pwd).each do |f|
-				if f.include? ".app" then
-					Dir.chdir("/var/mobile/Applications/#{$apps[0]}/#{f}")
-					basename = f.gsub('.app', '.png')
-					if Dir.entries("#{SR}/Default/Icons").include?(basename) then
-						if Exceptions.has_key?(f)
-							icon = Exceptions.fetch(f)
-							if icon.is_a?String
-								# Process once
-								print "*** #{f} - #{icon} ... "
-								FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/#{icon}")
-								puts "DONE"
-							elsif icon.is_a?Array
-								# Process each element individually
-								icon.each do |file|
-									print "*** #{f} - #{file} ... "
-									FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/#{file}")
-									puts "DONE"
-								end
-							end
-						else
-							if Dir.entries(Dir.pwd).include?("icon.png")
-								print "*** #{f} - icon.png ... "
-								FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/icon.png")
-								puts "DONE"
-							elsif Dir.entries(Dir.pwd).include?("Icon.png")
-								print "*** #{f} - Icon.png ... "
-								FileUtils::cp("#{SR}/Default/Icons/#{basename}", "/var/mobile/Applications/#{$apps[0]}/#{f}/Icon.png")
+				if APPSTORE_IN_NORMALAPPS == true
+					# Is the running app an exception?
+					if Exceptions.has_key?($apps[0]) then
+						target = Exceptions.fetch($apps[0])
+						if target.is_a?String
+							print "*** #{$apps[0]} - #{target} ... "
+							FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/#{target}")
+							puts "DONE"
+						elsif target.is_a?Array
+							target.each do |file|
+								print "*** #{$apps[0]} - #{file} ... "
+								FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/#{file}")
 								puts "DONE"
 							end
 						end
+					else
+						if File.exists?("icon.png") then
+							print "*** #{$apps[0]} - icon.png ... "
+							FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
+							puts "DONE"
+						elsif File.exists?("Icon.png") then
+							print "*** #{$apps[0]} - Icon.png ... "
+							FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/Icon.png")
+							puts "DONE"
+						end
 					end
-					if Dir.entries("#{SR}/AppStoreSupport").include?("#{f}-Info.plist")
-						FileUtils::cp("#{SR}/AppStoreSupport/#{f}-Info.plist","/var/mobile/Applications/#{$apps[0]}/#{f}/Info.plist")
-					end
+				else
+	                        	print "*** #{$apps[0]} - icon.png ... "
+					if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?(basename) then
+                                		FileUtils::cp("#{SR}/Default/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
+                                		puts "DONE"
+                        		else
+                                		puts "NOT FOUND!"
+                        		end
 				end
 			end
+			case $apps[0]
+				when 'MobileMusicPlayer.app': r_mobilemusicplayer
+				when 'MobileSlideShow.app': r_mobileslideshow
+				else r_others
+			end
+			$apps.shift
+		else
 			$apps.shift
 		end
 	end
