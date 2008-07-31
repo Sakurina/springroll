@@ -37,7 +37,7 @@ else
 end
 
 # Initialize constants
-VERSION = "r8-github"
+SR_VERSION = "r8-github"
 SB = "/System/Library/CoreServices/SpringBoard.app"
 SR = "/var/root/SpringRoll"
 APPSTORE_SUPPORT = false
@@ -48,8 +48,9 @@ case $ostype
 end
 
 # Warn users that AppStore support is now disabled
-if File.exists("#{SR}/.r7firstrun") and $ostype == "darwin9" then
+if File.exists?("#{SR}/.r7firstrun") then
 else
+	if $ostype == "darwin9" then
 		puts <<-doc
 * SPRINGROLL r7
   Apparently, AppStore support is harder than I
@@ -75,12 +76,13 @@ else
   I'm done wasting your time now!
 doc
 		sleep 10
-		`touch #{SR}/.r7firstrun`
+	end
+	`touch #{SR}/.r7firstrun`
 end
 
 def new
 	puts <<-new
-* WHAT'S NEW in #{VERSION}?
+* WHAT'S NEW in #{SR_VERSION}?
   - Web clip support has been added.
     Just name icons the name of the webclip,
     dot png.
@@ -1025,6 +1027,43 @@ def wc_name
 	end
 end
 
+=begin
+!!!!!!!!!!!!!!!!!!
+!!!!   LIST   !!!!
+!!!!!!!!!!!!!!!!!!
+=end
+
+def theme_list
+	if File.exists?(SR) then
+		if File.directory?(SR) then
+			themes = Dir.entries(SR)
+			# Delete system entries or defaults that are not themes!
+			themes.delete(".")
+			themes.delete("..")
+			themes.delete("Default")
+			themes.delete("AppStoreSupport")
+			if themes.empty? then
+				theme_count = 0
+				puts "* No themes found!"
+				puts "  Try adding something to your"
+				puts "  #{SR} directory!"
+			else
+				theme_count = 1
+				themes.sort!.each do |theme|
+					# Is the theme a directory?
+					if File.directory?("#{SR}/#{theme}") then
+						puts "[#{theme_count}] #{theme}"
+						theme_count += 1
+					end
+				end
+				puts "* #{theme_count - 1} themes found!"
+				puts "  Apply the theme of your choice by"
+				puts "  running 'sr theme ThemeName'."
+			end
+		end
+	end
+end
+
 # ARGUMENT PROCESSING
 # To be phased out with GetoptLong in the future.
 def proceed(action)
@@ -1055,5 +1094,6 @@ case ARGV[0]
 	when 'smbconv': proceed(smbconv)
 	when 'whatsnew': new
 	when 'manualprep': manualprep
+	when 'list': theme_list
 	else RDoc::usage
 end
