@@ -156,19 +156,19 @@ def backup
 		Dir.chdir "/var/root"
 		# prepare theme directories if nonexistant
 		puts "** Verifying theme directory structure"
-		if Dir.entries(Dir.pwd).include?("SpringRoll") == false then
+		if File.exists?("SpringRoll") == false then
 			print "*** Creating SpringRoll directory ... "
 			Dir.mkdir 'SpringRoll'
 			print "DONE \n"
 		end
 		Dir.chdir SR
-		if Dir.entries(Dir.pwd).include?("Default") == false then
+		if File.exists?("Default") == false then
 			print "*** Creating Default directory ... "
 			Dir.mkdir 'Default'
 			print "DONE \n"
 		end
 		Dir.chdir "#{SR}/Default"
-		if Dir.entries(Dir.pwd).include?("Icons") == false then
+		if File.exists?("Icons") == false then
 			print "*** Creating Icons directory ... "
 			Dir.mkdir 'Icons'
 			print "DONE \n"
@@ -303,9 +303,9 @@ end
 !!!!!!!!!!!!!!!!!!!
 =end
 def thcp(base, full)
-	if Dir.entries(Dir.pwd).include?(base) then
+	if File.exists?(base) then
 		print "*** #{base} ... "
-		FileUtils::cp("#{Dir.pwd}/#{base}","#{full}")
+		FileUtils::cp(base,"#{full}")
 		print "DONE \n"
 	else
 		puts "*** #{base} ... NOT FOUND"
@@ -335,14 +335,14 @@ def theme
 	# Verify to see if the theme in question exists!
 	print "** Does the theme even exist to begin with? ... "
 	Dir.chdir SR
-	if Dir.entries(Dir.pwd).include?(ARGV[1]) == false then
+	if File.exists?(ARGV[1]) == false then
 		print "NO \n"
 		raise StandardError, "The theme you have specified does not exist! Make sure your theme is one word only!"
 	end
 	print "YES \n"
 
 	# Force the user to run a backup if he/she hasn't yet.
-	if Dir.entries(Dir.pwd).include?("Default") == false then
+	if File.exists?("Default") == false then
 		puts "** WARNING: I strongly recommend running"
 		puts "   'sr backup' before doing this to keep"
 		puts "   backup of your UI just in case."
@@ -381,7 +381,7 @@ def theme
 	end
 	# BATTERY
 	puts "** Copying battery resources:"
-	if Dir.entries(Dir.pwd).include?("Battery") then
+	if File.exists?("Battery") then
 		Dir.chdir("Battery")
 		(1..17).each do |i|
 			thcp("BatteryBG_#{i}.png","#{SB}/BatteryBG_#{i}.png")
@@ -684,7 +684,7 @@ end
 =end
 
 def smbmv(old,new)
-	if Dir.entries(Dir.pwd).include?(old) then
+	if File.exists?(old) then
 		print "** #{old} -> #{new} ... "
 		File.rename(old,new)
 		print "DONE \n"
@@ -700,7 +700,7 @@ def smbconv
 		puts "* Renaming icons:"
 		# Don't break if the user's theme doesn't have
 		# an icons folder!
-		if Dir.entries(Dir.pwd).include?("Icons") then
+		if File.exists?("Icons") then
 			Dir.chdir("#{SR}/#{ARGV[1]}/Icons")
 			smbrenames = {
 				"Calendar.png" => "MobileCal.png",
