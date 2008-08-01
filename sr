@@ -28,6 +28,12 @@ require 'fileutils'
 !!!!   INITIAL SETUP   !!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 =end
+
+# Verify to see if user is root.
+if ENV['USER'] != 'root' then
+	raise StandardError, "You must run this as root!"
+end
+
 # Determine whether or not the device is running 2.0 (darwin9)
 # or 1.1.x (darwin8) by seeing if AppStore exists.
 if Dir.entries("/Applications").include?("AppStore.app") then
@@ -312,25 +318,10 @@ def thcp(base, full)
 	end
 end
 
-
-def theme_special(f, basename, app, filename)
-	@f = f
-	@basename = basename
-	@app = app
-	@filename = filename
-	if f == @app then
-		if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?(@basename) then
-			print "*** #{@f} - #{@filename} ... "
-			shaverify(@filename,@f,@basename)
-			print "DONE \n"
-		end
-	end	
-end
-
-def theme
+def theme(theme_name)
 	# Keep people from screwing their iPhones badly by verifying if the theme is Default.
 	raise StandardError, "DO NOT USE SPRINGROLL THEME DEFAULT! If you want to restore your backup, use sr restore." if ARGV[1] == "Default"
-	puts "* Theming interface with theme: #{ARGV[1]}"
+	puts "* Theming interface with theme: #{theme_name}"
 
 	# Verify to see if the theme in question exists!
 	print "** Does the theme even exist to begin with? ... "
@@ -349,7 +340,7 @@ def theme
 		raise StandardError, "Run sr backup to back things up for your own safety."
 	end
 
-	Dir.chdir("#{SR}/#{ARGV[1]}")
+	Dir.chdir("#{SR}/#{theme_name}")
 
 	# NON-ICON EXTRAS
 	# DOCK
@@ -402,7 +393,7 @@ def theme
 	end
 
 	# ICONS
-	if Dir.entries("/var/root/SpringRoll/#{ARGV[1]}").include?('Icons') then
+	if Dir.entries("/var/root/SpringRoll/#{theme_name}").include?('Icons') then
 		puts "** Copying icons..."
 		Dir.chdir('/Applications')
 		$apps = Dir.entries('/Applications')
@@ -412,82 +403,82 @@ def theme
 			if File.directory?("/Applications/#{$apps[0]}") then
 				Dir.chdir("/Applications/#{$apps[0]}")
 
-				def t_mobilemusicplayer
- 	       		         	if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-AudioPlayer.png') then
+				def t_mobilemusicplayer(theme_name)
+ 	       		         	if Dir.entries("#{SR}/#{theme_name}/Icons").include?('MobileMusicPlayer-AudioPlayer.png') then
 						print "*** MobileMusicPlayer-AudioPlayer.png ... "
-						FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/MobileMusicPlayer-AudioPlayer.png","/Applications/MobileMusicPlayer.app/icon-AudioPlayer.png")
+						FileUtils::cp("#{SR}/#{theme_name}/Icons/MobileMusicPlayer-AudioPlayer.png","/Applications/MobileMusicPlayer.app/icon-AudioPlayer.png")
 						print "DONE \n"
   	               		       	else
  	               	                	puts "*** MobileMusicPlayer-AudioPlayer.png ... "
                        			end
-					if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-MediaPlayer.png') then
+					if Dir.entries("#{SR}/#{theme_name}/Icons").include?('MobileMusicPlayer-MediaPlayer.png') then
 						print "*** MobileMusicPlayer-MediaPlayer.png ... "
-                       		         	FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/MobileMusicPlayer-MediaPlayer.png","/Applications/MobileMusicPlayer.app/icon-MediaPlayer.png")
+                       		         	FileUtils::cp("#{SR}/#{theme_name}/Icons/MobileMusicPlayer-MediaPlayer.png","/Applications/MobileMusicPlayer.app/icon-MediaPlayer.png")
                        		         	print "DONE \n"
                         		else
                                		 	puts "*** MobileMusicPlayer-MediaPlayer.png ... NOT FOUND"
                         		end
-					if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?('MobileMusicPlayer-VideoPlayer.png') then
+					if Dir.entries("#{SR}/#{theme_name}/Icons").include?('MobileMusicPlayer-VideoPlayer.png') then
 						print "*** MobileMusicPlayer-VideoPlayer.png ... "
-                                		FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/MobileMusicPlayer-VideoPlayer.png","/Applications/MobileMusicPlayer.app/icon-VideoPlayer.png")
+                                		FileUtils::cp("#{SR}/#{theme_name}/Icons/MobileMusicPlayer-VideoPlayer.png","/Applications/MobileMusicPlayer.app/icon-VideoPlayer.png")
                                 		print "DONE \n"
                         		else
                                 		puts "*** MobileMusicPlayer-VideoPlayer.png ... NOT FOUND!"
                         		end
                 		end
 
-                		def t_mobileslideshow
-					if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?('MobileSlideShow-Camera.png') then
+                		def t_mobileslideshow(theme_name)
+					if Dir.entries("#{SR}/#{theme_name}/Icons").include?('MobileSlideShow-Camera.png') then
 						print "*** MobileSlideShow-Camera.png ... "
-                                		FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/MobileSlideShow-Camera.png","/Applications/MobileSlideShow.app/icon-Camera.png")
+                                		FileUtils::cp("#{SR}/#{theme_name}/Icons/MobileSlideShow-Camera.png","/Applications/MobileSlideShow.app/icon-Camera.png")
                                 		print "DONE \n"
                         		else
                                 		puts "*** MobileSlideShow-Camera.png ... NOT FOUND"
                         		end
-					if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?('MobileSlideShow-Photos.png') then
+					if Dir.entries("#{SR}/#{theme_name}/Icons").include?('MobileSlideShow-Photos.png') then
 						print "*** MobileSlideShow-Photos.png ... "
-                                		FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/MobileSlideShow-Photos.png","/Applications/MobileSlideShow.app/icon-Photos.png")
+                                		FileUtils::cp("#{SR}/#{theme_name}/Icons/MobileSlideShow-Photos.png","/Applications/MobileSlideShow.app/icon-Photos.png")
                                 		print "DONE \n"
                         		else
                                 		puts "*** MobileSlideShow-Photos.png ... NOT FOUND"
                         		end
                 		end
 
-                		def t_others
+                		def t_others(theme_name)
 					basename = $apps[0].gsub('.app','.png')
 					if APPSTORE_IN_NORMALAPPS == true
 						# Does the theme have an icon for this app?
-						if File.exists?("#{SR}/#{ARGV[1]}/Icons/#{basename}") then
+						if File.exists?("#{SR}/#{theme_name}/Icons/#{basename}") then
 							# Is the theme an exception?
 							if Exceptions.has_key?($apps[0]) then
 								target = Exceptions.fetch($apps[0])
 								if target.is_a?String
 									print "*** #{$apps[0]} - #{target} ... "
-									FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/Applications/#{$apps[0]}/#{target}")
+									FileUtils::cp("#{SR}/#{theme_name}/Icons/#{basename}","/Applications/#{$apps[0]}/#{target}")
 									puts "DONE"
 								elsif target.is_a?Array
 									target.each do |file|
 										print "*** #{$apps[0]} - #{file} ... "
-										FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/Applications/#{$apps[0]}/#{file}")
+										FileUtils::cp("#{SR}/#{theme_name}/Icons/#{basename}","/Applications/#{$apps[0]}/#{file}")
 										puts "DONE"
 									end
 								end
 							else
 								if File.exists?("icon.png") then
 									print "*** #{$apps[0]} - icon.png ... "
-									FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
+									FileUtils::cp("#{SR}/#{theme_name}/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
 									puts "DONE"
 								elsif File.exists?("Icon.png") then
 									print "*** #{$apps[0]} - Icon.png ... "
-									FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/Applications/#{$apps[0]}/Icon.png")
+									FileUtils::cp("#{SR}/#{theme_name}/Icons/#{basename}","/Applications/#{$apps[0]}/Icon.png")
 									puts "DONE"
 								end
 							end
 						end
 					else
 	                        		print "*** #{$apps[0]} - icon.png ... "
-						if Dir.entries("#{SR}/#{ARGV[1]}/Icons").include?(basename) then
-                                			FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
+						if Dir.entries("#{SR}/#{theme_name}/Icons").include?(basename) then
+                                			FileUtils::cp("#{SR}/#{theme_name}/Icons/#{basename}","/Applications/#{$apps[0]}/icon.png")
                                 			puts "DONE"
                         			else
                                 			puts "NOT FOUND!"
@@ -496,9 +487,9 @@ def theme
                 		end
 
 				case $apps[0]
-					when "MobileMusicPlayer.app": t_mobilemusicplayer
-					when "MobileSlideShow.app": t_mobileslideshow
-					else t_others
+					when "MobileMusicPlayer.app": t_mobilemusicplayer(theme_name)
+					when "MobileSlideShow.app": t_mobileslideshow(theme_name)
+					else t_others(theme_name)
 				end
                 		$apps.shift
 			else
@@ -517,9 +508,9 @@ def theme
 			webclips.delete("..")
 			webclips.each do |wc|
 				Dir.chdir("/var/mobile/Library/WebClips/#{wc}")
-				if File.exists?("icon.png") and File.exists?("#{SR}/#{ARGV[1]}/Icons/#{wc_name}.png") then
+				if File.exists?("icon.png") and File.exists?("#{SR}/#{theme_name}/Icons/#{wc_name}.png") then
 					print "*** #{wc_name} ... "
-					FileUtils::cp("#{SR}/#{ARGV[1]}/Icons/#{wc_name}.png", "/var/mobile/Library/WebClips/#{wc}/icon.png")
+					FileUtils::cp("#{SR}/#{theme_name}/Icons/#{wc_name}.png", "/var/mobile/Library/WebClips/#{wc}/icon.png")
 					puts "DONE"
 				end
 			end
@@ -530,6 +521,7 @@ def theme
 	puts "  To restore: use 'sr restore'"
 	puts "  Device will respring shortly."
 end
+
 
 =begin
 !!!!!!!!!!!!!!!!!!!!!
@@ -691,17 +683,17 @@ def smbmv(old,new)
 	end
 end
 
-def smbconv
+def smbconv(theme_name)
 	# Verify to see if the theme even exists!
-	if Dir.entries(SR).include?(ARGV[1]) then
-		Dir.chdir("#{SR}/#{ARGV[1]}")
+	if File.exists? "#{SR}/#{theme_name}" then
+		Dir.chdir("#{SR}/#{theme_name}")
 		puts "* Renaming status bar:"
 		smbmv("StatusBar.png","StatusBar-FSO.png")
 		puts "* Renaming icons:"
 		# Don't break if the user's theme doesn't have
 		# an icons folder!
 		if File.exists?("Icons") then
-			Dir.chdir("#{SR}/#{ARGV[1]}/Icons")
+			Dir.chdir("#{SR}/#{theme_name}/Icons")
 			smbrenames = {
 				"Calendar.png" => "MobileCal.png",
 				"Camera.png" => "MobileSlideShow-Camera.png",
@@ -725,7 +717,7 @@ def smbconv
 			puts "* WARNING! No icon directory found!"
 		end
 		puts "* Conversion complete!"
-		puts "  Use 'sr theme #{ARGV[1]}' to"
+		puts "  Use 'sr theme #{theme_name}' to"
 		puts "  apply this theme."
 	else
 		raise StandardError, "The theme you've specified doesn't exist."
@@ -791,36 +783,32 @@ def theme_list
 	end
 end
 
-# ARGUMENT PROCESSING
-# To be phased out with GetoptLong in the future.
-def proceed(action)
-	# Verify to see if user is root.
-	if ENV['USER'] != 'root' then
-		raise StandardError, "You must run this as root!"
-	end
-	# Dispatch orders.
-	case action
-		when 'backup': backup # WORKING!
-		when 'theme': theme # WORKING!
-		when 'restore': restore # WORKING!
-		when 'smbconv': smbconv # WORKING!
-		when 'manualprep': manualprep
-	end
-end
+=begin
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!   ARGUMENT PROCESSING   !!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+=end
 
 case ARGV[0]
 	when nil: RDoc::usage
-	when 'r': proceed(restore)
-	when 't': proceed(theme)
-	when 'b': proceed(backup)
-	when 's': proceed(smbconv)
-	when 'm': proceed(manualprep)
-	when 'restore': proceed(restore)
-	when 'backup': proceed(backup)
-	when 'theme': proceed(theme)
-	when 'smbconv': proceed(smbconv)
+	when 'r': restore
+	when 't'
+		raise ArgumentError, "Enter in a theme name." if ARGV[1].nil?
+		theme(ARGV[1])
+	when 'b': backup
+	when 's'
+		raise ArgumentError, "Enter in a theme name." if ARGV[1].nil?
+		smbconv(ARGV[1])
+	when 'l': theme_list
+	when 'restore': restore
+	when 'backup': backup
+	when 'theme'
+		raise ArgumentError, "Enter in a theme name." if ARGV[1].nil?
+		theme(ARGV[1])
+	when 'smbconv'
+		raise ArgumentError, "Enter in a theme name." if ARGV[1].nil?
+		smbconv(ARGV[1])
 	when 'whatsnew': new
-	when 'manualprep': manualprep
 	when 'list': theme_list
 	else RDoc::usage
 end
